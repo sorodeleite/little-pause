@@ -1,7 +1,12 @@
 package com.littlepause
 
+import android.app.AppOpsManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Process
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -37,6 +42,7 @@ private val Lilac = Color(0xFFF0ECF6)
 private val Muted = Color(0xFFB49AA3)
 private val PtBr = Locale("pt", "BR")
 private data class PlannerTask(val id: Long, val title: String, val done: Boolean)
+private data class AppChoice(val packageName: String, val label: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +75,14 @@ private fun PlannerHome() {
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showTaskEditor by remember { mutableStateOf(false) }
     var newTask by remember { mutableStateOf("") }
+    var showAppPicker by remember { mutableStateOf(false) }
+    var selectedPackages by remember {
+        mutableStateOf(prefs.getStringSet("blocked_apps", emptySet()).orEmpty())
+    }
+    var usageAllowed by remember { mutableStateOf(hasUsageAccess(context)) }
+    var overlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    var isBlocking by remember { mutableStateOf(prefs.getBoolean("blocking_enabled", false)) }
+    val installedApps = remember(context) { loadLaunchableApps(context) }
     val tasks = remember(selectedDate) {
         loadTasks(prefs, selectedDate)
     }
@@ -128,6 +142,80 @@ private fun PlannerHome() {
                     colors = CardDefaults.cardColors(containerColor = Paper),
                     shape = RoundedCornerShape(24.dp)
                 ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(17.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text("seu cantinho de foco  ♡", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                            Text("sem Acessibilidade: usando o acesso ao uso do Android", color = Muted, fontSize = 11.sp)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Acesso ao uso", color = Ink, fontSize = 13.sp)
+                                Text(if (usageAllowed) "autorizado ♡" else "necessário para identificar o app aberto", color = Muted, fontSize = 11.sp)
+                            }
+                            TextButton(onClick = {
+                                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                            }) { Text(if (usageAllowed) "abrir" else "permitir", color = Rose) }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Aparecer sobre outros apps", color = Ink, fontSize = 13.sp)
+                                Text(if (overlayAllowed) "autorizado ♡" else "necessário para mostrar a pausa", color = Muted, fontSize = 11.sp)
+                            }
+                            TextButton(onClick = {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                                )
+                            }) { Text(if (overlayAllowed) "abrir" else "permitir", color = Rose) }
+                        }
+                        OutlinedButton(
+                            onClick = { showAppPicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("escolher aplicativos  ·  ${selectedPackages.size} selecionados", color = Rose)
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                usageAllowed = hasUsageAccess(context)
+                                overlayAllowed = Settings.canDrawOverlays(context)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) { Text("atualizar permissões", color = Muted) }
+                        Button(
+                            onClick = {
+                                if (usageAllowed && overlayAllowed && selectedPackages.isNotEmpty()) {
+                                    prefs.edit().putBoolean("blocking_enabled", true).apply()
+                                    context.startForegroundService(Intent(context, AppBlockingService::class.java))
+                                    isBlocking = true
+                                }
+                            },
+                            enabled = usageAllowed && overlayAllowed && selectedPackages.isNotEmpty() && !isBlocking,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Rose)
+                        ) { Text("ativar bloqueio") }
+                        if (isBlocking) {
+                            TextButton(
+                                onClick = {
+                                    prefs.edit().putBoolean("blocking_enabled", false).apply()
+                                    context.stopService(Intent(context, AppBlockingService::class.java))
+                                    isBlocking = false
+                                },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) { Text("desativar bloqueio", color = Rose) }
+                        }
+                    }
+                }
+            }
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Paper),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
                     Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -179,6 +267,47 @@ private fun PlannerHome() {
                 )
             }
         }
+    }
+
+    if (showAppPicker) {
+        AlertDialog(
+            onDismissRequest = { showAppPicker = false },
+            title = { Text("quais apps entram na pausa? ♡", color = Ink) },
+            text = {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(installedApps, key = { it.packageName }) { app ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                val next = selectedPackages.toMutableSet()
+                                if (app.packageName in next) next.remove(app.packageName) else next.add(app.packageName)
+                                selectedPackages = next
+                                prefs.edit().putStringSet("blocked_apps", next).apply()
+                            }.padding(vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = app.packageName in selectedPackages,
+                                onCheckedChange = { checked ->
+                                    val next = selectedPackages.toMutableSet()
+                                    if (checked) next.add(app.packageName) else next.remove(app.packageName)
+                                    selectedPackages = next
+                                    prefs.edit().putStringSet("blocked_apps", next).apply()
+                                },
+                                colors = CheckboxDefaults.colors(checkedColor = Rose)
+                            )
+                            Text(app.label, color = Ink, fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAppPicker = false }) { Text("prontinho", color = Rose) }
+            },
+            containerColor = Cream
+        )
     }
 
     if (showTaskEditor) {
@@ -384,3 +513,28 @@ private fun saveTasks(
 }
 
 private fun taskKey(date: LocalDate) = "tasks_${date}"
+
+
+private fun hasUsageAccess(context: Context): Boolean {
+    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+    return appOps.checkOpNoThrow(
+        AppOpsManager.OPSTR_GET_USAGE_STATS,
+        Process.myUid(),
+        context.packageName
+    ) == AppOpsManager.MODE_ALLOWED
+}
+
+private fun loadLaunchableApps(context: Context): List<AppChoice> {
+    val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+    return context.packageManager.queryIntentActivities(intent, 0)
+        .mapNotNull { info ->
+            val packageName = info.activityInfo.packageName
+            if (packageName == context.packageName) null
+            else AppChoice(
+                packageName,
+                info.loadLabel(context.packageManager).toString()
+            )
+        }
+        .distinctBy { it.packageName }
+        .sortedBy { it.label.lowercase(PtBr) }
+}
