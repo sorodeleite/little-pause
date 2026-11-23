@@ -35,15 +35,15 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: little-pause-0.3.2
+          name: little-pause-0.3.3
           path: little-pause.apk
           if-no-files-found: error
 
       - name: Publish direct APK download
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v0.3.2
-          name: Little Pause 0.3.2
+          tag_name: v0.3.3
+          name: Little Pause 0.3.3
           body: |
             Versão de teste do Little Pause.
 
