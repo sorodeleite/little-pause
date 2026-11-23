@@ -96,6 +96,7 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
     var endMinute by remember { mutableStateOf(prefs.getInt("end_minute", 0).toString().padStart(2, '0')) }
     var showAppPicker by remember { mutableStateOf(false) }
     var showTaskEditor by remember { mutableStateOf(false) }
+    var showAccessibilityInfo by remember { mutableStateOf(false) }
     var newTask by remember { mutableStateOf("") }
     val tasks = remember(selectedDate) {
         loadTasks(prefs, selectedDate)
@@ -240,7 +241,7 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
                             Text("salvar minha pausa", color = Color.White)
                         }
                         OutlinedButton(
-                            onClick = onAccessibility,
+                            onClick = { showAccessibilityInfo = true },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink)
@@ -294,6 +295,31 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { showTaskEditor = false }) { Text("cancelar", color = Muted) }
+            },
+            containerColor = Cream
+        )
+    }
+
+    if (showAccessibilityInfo) {
+        AlertDialog(
+            onDismissRequest = { showAccessibilityInfo = false },
+            title = { Text("sobre o acesso à acessibilidade ♡", color = Ink) },
+            text = {
+                Text(
+                    "Para pausar os aplicativos que você escolher, o Little Pause precisa identificar qual aplicativo está aberto. O serviço observa somente mudanças de janela e não lê textos, mensagens, senhas ou o conteúdo da tela.\n\nA ativação é opcional e feita por você nas configurações do Android. Nenhum aplicativo fica bloqueado enquanto o serviço estiver desligado.",
+                    color = Ink
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAccessibilityInfo = false
+                    onAccessibility()
+                }) { Text("abrir configurações", color = Rose) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAccessibilityInfo = false }) {
+                    Text("agora não", color = Muted)
+                }
             },
             containerColor = Cream
         )
