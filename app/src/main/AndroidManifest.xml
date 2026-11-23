@@ -8,6 +8,7 @@
     <application
         android:allowBackup="true"
         android:label="little pause"
+        android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.LittlePause"
         android:supportsRtl="true">
 
