@@ -6,14 +6,44 @@ plugins {
 
 android {
     namespace = "com.littlepause"
+
+    val releaseStorePath = System.getenv("LITTLE_PAUSE_KEYSTORE_PATH")
+    val releaseStorePassword = System.getenv("LITTLE_PAUSE_KEYSTORE_PASSWORD")
+    val releaseKeyAlias = System.getenv("LITTLE_PAUSE_KEY_ALIAS")
+    val releaseKeyPassword = System.getenv("LITTLE_PAUSE_KEY_PASSWORD")
+
+    signingConfigs {
+        if (
+            !releaseStorePath.isNullOrBlank() &&
+            !releaseStorePassword.isNullOrBlank() &&
+            !releaseKeyAlias.isNullOrBlank() &&
+            !releaseKeyPassword.isNullOrBlank()
+        ) {
+            create("release") {
+                storeFile = file(releaseStorePath)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
     compileSdk = 35
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.littlepause"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
     }
 
     compileOptions {
