@@ -14,7 +14,6 @@ import java.util.Calendar
 
 class AppBlockingService : AccessibilityService() {
     private var blocker: LinearLayout? = null
-    private var lastBlockedPackage: String? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
@@ -98,9 +97,8 @@ class AppBlockingService : AccessibilityService() {
         )
 
         try {
-            windowManager.addView(card, params)
+            (getSystemService(WINDOW_SERVICE) as WindowManager).addView(card, params)
             blocker = card
-            lastBlockedPackage = null
         } catch (_: Exception) {
             blocker = null
         }
@@ -109,12 +107,11 @@ class AppBlockingService : AccessibilityService() {
     private fun removeBlocker() {
         blocker?.let {
             try {
-                windowManager.removeView(it)
+                (getSystemService(WINDOW_SERVICE) as WindowManager).removeView(it)
             } catch (_: Exception) {
             }
         }
         blocker = null
-        lastBlockedPackage = null
     }
 
     override fun onInterrupt() {
