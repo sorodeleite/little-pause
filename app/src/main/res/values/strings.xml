@@ -1,4 +1,3 @@
 <resources>
     <string name="app_name">little pause</string>
-    <string name="accessibility_description">Identifica somente qual aplicativo está aberto para aplicar os horários de pausa escolhidos. Não lê o conteúdo da tela.</string>
 </resources>
