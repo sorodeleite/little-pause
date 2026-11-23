@@ -1,10 +1,7 @@
 package com.littlepause
 
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -39,14 +36,11 @@ private val Ink = Color(0xFF705A61)
 private val Lilac = Color(0xFFF0ECF6)
 private val Muted = Color(0xFFB49AA3)
 private val PtBr = Locale("pt", "BR")
-
-data class AppChoice(val packageName: String, val label: String)
 private data class PlannerTask(val id: Long, val title: String, val done: Boolean)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val apps = loadLaunchableApps()
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -59,44 +53,21 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 Surface(color = Cream, modifier = Modifier.fillMaxSize()) {
-                    PlannerHome(apps) {
-                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    }
+                    PlannerHome()
                 }
             }
         }
     }
 
-    @Suppress("DEPRECATION")
-    private fun loadLaunchableApps(): List<AppChoice> {
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL)
-            .mapNotNull { info ->
-                val appPackage = info.activityInfo?.packageName ?: return@mapNotNull null
-                if (appPackage == packageName) return@mapNotNull null
-                AppChoice(appPackage, info.loadLabel(packageManager).toString())
-            }
-            .distinctBy { it.packageName }
-            .sortedBy { it.label.lowercase(PtBr) }
-    }
 }
 
 @Composable
-private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
+private fun PlannerHome() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("little_pause", Context.MODE_PRIVATE) }
     var month by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedApps by remember {
-        mutableStateOf(prefs.getStringSet("blocked_packages", emptySet())?.toSet() ?: emptySet())
-    }
-    var startHour by remember { mutableStateOf(prefs.getInt("start_hour", 9).toString()) }
-    var startMinute by remember { mutableStateOf(prefs.getInt("start_minute", 0).toString().padStart(2, '0')) }
-    var endHour by remember { mutableStateOf(prefs.getInt("end_hour", 11).toString()) }
-    var endMinute by remember { mutableStateOf(prefs.getInt("end_minute", 0).toString().padStart(2, '0')) }
-    var showAppPicker by remember { mutableStateOf(false) }
     var showTaskEditor by remember { mutableStateOf(false) }
-    var showAccessibilityInfo by remember { mutableStateOf(false) }
     var newTask by remember { mutableStateOf("") }
     val tasks = remember(selectedDate) {
         loadTasks(prefs, selectedDate)
@@ -145,8 +116,8 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
                         color = Blush
                     )
                     SummaryCard(
-                        title = "pequenas pausas",
-                        detail = "${selectedApps.size} app(s) selecionado(s)",
+                        title = "um passo de cada vez",
+                        detail = "sem pressa, no seu ritmo",
                         modifier = Modifier.weight(1f),
                         color = Lilac
                     )
@@ -196,67 +167,6 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
                 }
             }
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Blush),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                        Text("horário de carinho digital", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        Text("escolha quando sua pausa acontece ♡", color = Rose, fontSize = 12.sp)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TimeField("começa", startHour, { startHour = it }, startMinute, { startMinute = it }, Modifier.weight(1f))
-                            TimeField("termina", endHour, { endHour = it }, endMinute, { endMinute = it }, Modifier.weight(1f))
-                        }
-                        Text("${selectedApps.size} aplicativo(s) na sua pausa", color = Ink, fontSize = 13.sp)
-                        OutlinedButton(
-                            onClick = { showAppPicker = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Rose)
-                        ) {
-                            Text("escolher aplicativos")
-                        }
-                        Button(
-                            onClick = {
-                                val fromHour = startHour.toIntOrNull()?.coerceIn(0, 23) ?: 9
-                                val fromMinute = startMinute.toIntOrNull()?.coerceIn(0, 59) ?: 0
-                                val untilHour = endHour.toIntOrNull()?.coerceIn(0, 23) ?: 11
-                                val untilMinute = endMinute.toIntOrNull()?.coerceIn(0, 59) ?: 0
-                                prefs.edit()
-                                    .putStringSet("blocked_packages", selectedApps)
-                                    .putInt("start_hour", fromHour)
-                                    .putInt("start_minute", fromMinute)
-                                    .putInt("end_hour", untilHour)
-                                    .putInt("end_minute", untilMinute)
-                                    .apply()
-                                startHour = fromHour.toString()
-                                startMinute = fromMinute.toString().padStart(2, '0')
-                                endHour = untilHour.toString()
-                                endMinute = untilMinute.toString().padStart(2, '0')
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Rose)
-                        ) {
-                            Text("salvar minha pausa", color = Color.White)
-                        }
-                        OutlinedButton(
-                            onClick = { showAccessibilityInfo = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink)
-                        ) {
-                            Text("ativar serviço de bloqueio")
-                        }
-                        Text(
-                            "o bloqueio só funciona depois que você ativar o serviço nas configurações de acessibilidade do Android.",
-                            color = Rose,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-            item {
                 UpdateCard()
             }
             item {
@@ -300,57 +210,6 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
         )
     }
 
-    if (showAccessibilityInfo) {
-        AlertDialog(
-            onDismissRequest = { showAccessibilityInfo = false },
-            title = { Text("sobre o acesso à acessibilidade ♡", color = Ink) },
-            text = {
-                Text(
-                    "Para pausar os aplicativos que você escolher, o Little Pause precisa identificar qual aplicativo está aberto. O serviço observa somente mudanças de janela e não lê textos, mensagens, senhas ou o conteúdo da tela.\n\nA ativação é opcional e feita por você nas configurações do Android. Nenhum aplicativo fica bloqueado enquanto o serviço estiver desligado.",
-                    color = Ink
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showAccessibilityInfo = false
-                    onAccessibility()
-                }) { Text("abrir configurações", color = Rose) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAccessibilityInfo = false }) {
-                    Text("agora não", color = Muted)
-                }
-            },
-            containerColor = Cream
-        )
-    }
-
-    if (showAppPicker) {
-        AlertDialog(
-            onDismissRequest = { showAppPicker = false },
-            title = { Text("escolha seus aplicativos ♡", color = Ink) },
-            text = {
-                LazyColumn(Modifier.heightIn(max = 420.dp)) {
-                    items(apps, key = { it.packageName }) { app ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = app.packageName in selectedApps,
-                                onCheckedChange = { checked ->
-                                    selectedApps = if (checked) selectedApps + app.packageName else selectedApps - app.packageName
-                                },
-                                colors = CheckboxDefaults.colors(checkedColor = Rose)
-                            )
-                            Text(app.label, color = Ink, fontSize = 14.sp)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showAppPicker = false }) { Text("prontinho", color = Rose) }
-            },
-            containerColor = Cream
-        )
-    }
 }
 
 @Composable
