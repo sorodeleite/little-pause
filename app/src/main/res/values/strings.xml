@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">little pause</string>
+    <string name="accessibility_description">Detecta quando um aplicativo selecionado é aberto durante um horário de pausa.</string>
+</resources>
