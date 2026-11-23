@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -170,7 +171,7 @@ private fun PlannerHome(onAccessibility: () -> Unit) {
 }
 
 @Composable
-private fun BoxDay(day: Int?, selected: Boolean) {
+private fun RowScope.BoxDay(day: Int?, selected: Boolean) {
     androidx.compose.foundation.layout.Box(
         modifier = Modifier.weight(1f).height(34.dp),
         contentAlignment = Alignment.Center
