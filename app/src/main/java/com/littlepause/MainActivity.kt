@@ -256,6 +256,9 @@ private fun PlannerHome(apps: List<AppChoice>, onAccessibility: () -> Unit) {
                 }
             }
             item {
+                UpdateCard()
+            }
+            item {
                 Text(
                     "feito com carinho, para os seus dias ♡",
                     color = Muted,
