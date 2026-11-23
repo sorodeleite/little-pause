@@ -18,6 +18,7 @@ class AppBlockingService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
+        if (packageName == this.packageName) return
         if (packageName != "com.twitter.android") {
             removeBlocker()
             return
@@ -52,7 +53,7 @@ class AppBlockingService : AccessibilityService() {
         card.addView(TextView(this).apply {
             text = "♡"
             textSize = 46f
-            setTextColor(Color.WHITE)
+            setTextColor(Color.rgb(184, 117, 141))
             gravity = Gravity.CENTER
         })
         card.addView(TextView(this).apply {
