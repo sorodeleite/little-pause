@@ -1,0 +1,210 @@
+package com.littlepause
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.Intent
+import android.graphics.Color as AndroidColor
+import android.graphics.PixelFormat
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.view.Gravity
+import android.view.WindowManager
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
+
+class AppBlockingService : Service() {
+    private val handler = Handler(Looper.getMainLooper())
+    private var windowManager: WindowManager? = null
+    private var overlay: FrameLayout? = null
+    private var foregroundPackage: String? = null
+    private var lastQueryTime = 0L
+    private var temporarilyAllowedUntil = 0L
+
+    private val checkForeground = object : Runnable {
+        override fun run() {
+            checkCurrentApp()
+            handler.postDelayed(this, 500)
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, buildNotification())
+        lastQueryTime = System.currentTimeMillis() - 15_000
+        handler.post(checkForeground)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        return START_STICKY
+    }
+
+    private fun checkCurrentApp() {
+        val prefs = getSharedPreferences("little_pause", MODE_PRIVATE)
+        if (!prefs.getBoolean("blocking_enabled", false)) {
+            stopSelf()
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val usageStats = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+        val events = usageStats.queryEvents(lastQueryTime, now)
+        if (events != null) {
+            val event = UsageEvents.Event()
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                when (event.eventType) {
+                    UsageEvents.Event.ACTIVITY_RESUMED -> foregroundPackage = event.packageName
+                    UsageEvents.Event.ACTIVITY_PAUSED -> {
+                        if (foregroundPackage == event.packageName) foregroundPackage = null
+                    }
+                }
+            }
+        }
+        lastQueryTime = now
+
+        val blockedApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
+        val shouldBlock = now >= temporarilyAllowedUntil &&
+            foregroundPackage != null &&
+            foregroundPackage in blockedApps &&
+            foregroundPackage != packageName
+
+        if (shouldBlock) showPauseScreen() else hidePauseScreen()
+    }
+
+    private fun showPauseScreen() {
+        if (overlay != null || !android.provider.Settings.canDrawOverlays(this)) return
+
+        val root = FrameLayout(this).apply {
+            setBackgroundColor(AndroidColor.rgb(255, 248, 245))
+            isClickable = true
+            isFocusable = true
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(56, 48, 56, 48)
+        }
+
+        val heading = TextView(this).apply {
+            text = "um minutinho para respirar  ♡"
+            textSize = 23f
+            setTextColor(AndroidColor.rgb(112, 90, 97))
+            gravity = Gravity.CENTER
+        }
+
+        val message = TextView(this).apply {
+            text = "você escolheu fazer uma pequena pausa antes de continuar."
+            textSize = 15f
+            setTextColor(AndroidColor.rgb(180, 154, 163))
+            gravity = Gravity.CENTER
+            setPadding(0, 24, 0, 32)
+        }
+
+        val backButton = Button(this).apply {
+            text = "voltar para o meu dia"
+            setOnClickListener {
+                temporarilyAllowedUntil = System.currentTimeMillis() + 2500
+                hidePauseScreen()
+                val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(home)
+            }
+        }
+
+        content.addView(heading)
+        content.addView(message)
+        content.addView(backButton)
+        root.addView(
+            content,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+            )
+        )
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+
+        try {
+            windowManager?.addView(root, params)
+            overlay = root
+        } catch (_: Exception) {
+            overlay = null
+        }
+    }
+
+    private fun hidePauseScreen() {
+        overlay?.let { view ->
+            try {
+                windowManager?.removeView(view)
+            } catch (_: Exception) {
+            }
+        }
+        overlay = null
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Bloqueio de aplicativos",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildNotification(): Notification {
+        val openApp = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return Notification.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setContentTitle("little pause")
+            .setContentText("seu cantinho de foco está ativo")
+            .setContentIntent(openApp)
+            .setOngoing(true)
+            .build()
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(checkForeground)
+        hidePauseScreen()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        private const val CHANNEL_ID = "little_pause_blocker"
+        private const val NOTIFICATION_ID = 31
+        const val ACTION_STOP = "com.littlepause.STOP_BLOCKING"
+    }
+}
