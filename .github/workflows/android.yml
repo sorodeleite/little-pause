@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -29,9 +29,26 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug
 
-      - name: Upload APK
+      - name: Prepare APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk little-pause.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: little-pause-0.3.0
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: little-pause.apk
           if-no-files-found: error
+
+      - name: Publish direct APK download
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v0.3.0
+          name: Little Pause 0.3.0
+          body: |
+            Versão de teste do Little Pause.
+
+            Baixe o arquivo little-pause.apk e instale manualmente no Android.
+          files: little-pause.apk
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
