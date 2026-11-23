@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="little pause"
+        android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.LittlePause"
         android:supportsRtl="true">
@@ -26,7 +26,7 @@
 
         <service
             android:name=".AppBlockingService"
-            android:label="Little Pause"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="false">
             <intent-filter>

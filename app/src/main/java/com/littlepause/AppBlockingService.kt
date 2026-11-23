@@ -14,11 +14,16 @@ import java.util.Calendar
 
 class AppBlockingService : AccessibilityService() {
     private var blocker: LinearLayout? = null
+    private var lastBlockedPackage: String? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+
         val openedPackage = event.packageName?.toString() ?: return
-        if (openedPackage == packageName) return
+        if (openedPackage == packageName) {
+            removeBlocker()
+            return
+        }
 
         val preferences = getSharedPreferences("little_pause", MODE_PRIVATE)
         val blockedPackages = preferences.getStringSet("blocked_packages", emptySet()).orEmpty()
@@ -26,33 +31,38 @@ class AppBlockingService : AccessibilityService() {
             removeBlocker()
             return
         }
-        showBlocker(preferences.getInt("end_hour", 11).coerceIn(0, 23))
+
+        showBlocker(preferences.getInt("end_hour", 11), preferences.getInt("end_minute", 0))
     }
 
     private fun isPauseTime(preferences: android.content.SharedPreferences): Boolean {
-        val start = preferences.getInt("start_hour", 9).coerceIn(0, 23)
-        val end = preferences.getInt("end_hour", 11).coerceIn(0, 23)
+        val start = preferences.getInt("start_hour", 9).coerceIn(0, 23) * 60 +
+            preferences.getInt("start_minute", 0).coerceIn(0, 59)
+        val end = preferences.getInt("end_hour", 11).coerceIn(0, 23) * 60 +
+            preferences.getInt("end_minute", 0).coerceIn(0, 59)
         if (start == end) return false
 
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        return if (start < end) hour >= start && hour < end else hour >= start || hour < end
+        val now = Calendar.getInstance()
+        val current = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+        return if (start < end) current >= start && current < end else current >= start || current < end
     }
 
-    private fun showBlocker(endHour: Int) {
+    private fun showBlocker(endHour: Int, endMinute: Int) {
         if (blocker != null) return
 
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(42, 54, 42, 54)
+            setPadding(48, 60, 48, 60)
             background = GradientDrawable().apply {
                 setColor(Color.rgb(255, 248, 245))
-                cornerRadius = 52f
+                cornerRadius = 64f
             }
         }
+
         card.addView(TextView(this).apply {
             text = "♡"
-            textSize = 46f
+            textSize = 48f
             setTextColor(Color.rgb(184, 117, 141))
             gravity = Gravity.CENTER
         })
@@ -65,7 +75,7 @@ class AppBlockingService : AccessibilityService() {
             setPadding(0, 18, 0, 10)
         })
         card.addView(TextView(this).apply {
-            text = "esse aplicativo fica em pausa por enquanto.\nvolte quando seu horário terminar.  ♡"
+            text = "esse aplicativo fica em pausa por enquanto.\nvolte depois das ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}  ♡"
             textSize = 15f
             setTextColor(Color.rgb(184, 117, 141))
             gravity = Gravity.CENTER
@@ -86,9 +96,11 @@ class AppBlockingService : AccessibilityService() {
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             android.graphics.PixelFormat.TRANSLUCENT
         )
+
         try {
             windowManager.addView(card, params)
             blocker = card
+            lastBlockedPackage = null
         } catch (_: Exception) {
             blocker = null
         }
@@ -96,12 +108,18 @@ class AppBlockingService : AccessibilityService() {
 
     private fun removeBlocker() {
         blocker?.let {
-            try { windowManager.removeView(it) } catch (_: Exception) { }
+            try {
+                windowManager.removeView(it)
+            } catch (_: Exception) {
+            }
         }
         blocker = null
+        lastBlockedPackage = null
     }
 
-    override fun onInterrupt() = removeBlocker()
+    override fun onInterrupt() {
+        removeBlocker()
+    }
 
     override fun onDestroy() {
         removeBlocker()
