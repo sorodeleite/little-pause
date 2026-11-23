@@ -5,8 +5,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
-import android.view.accessibility.AccessibilityEvent
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,27 +17,28 @@ class AppBlockingService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        val packageName = event.packageName?.toString() ?: return
-        if (packageName == this.packageName) return
-        if (packageName != "com.twitter.android") {
-            removeBlocker()
-            return
-        }
+        val openedPackage = event.packageName?.toString() ?: return
+        if (openedPackage == packageName) return
 
-        val prefs = getSharedPreferences("little_pause", MODE_PRIVATE)
-        if (!prefs.getBoolean("block_x", true) || !isQuietTime()) {
+        val preferences = getSharedPreferences("little_pause", MODE_PRIVATE)
+        val blockedPackages = preferences.getStringSet("blocked_packages", emptySet()).orEmpty()
+        if (openedPackage !in blockedPackages || !isPauseTime(preferences)) {
             removeBlocker()
             return
         }
-        showBlocker()
+        showBlocker(preferences.getInt("end_hour", 11).coerceIn(0, 23))
     }
 
-    private fun isQuietTime(): Boolean {
+    private fun isPauseTime(preferences: android.content.SharedPreferences): Boolean {
+        val start = preferences.getInt("start_hour", 9).coerceIn(0, 23)
+        val end = preferences.getInt("end_hour", 11).coerceIn(0, 23)
+        if (start == end) return false
+
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        return hour >= 9 && hour < 11
+        return if (start < end) hour >= start && hour < end else hour >= start || hour < end
     }
 
-    private fun showBlocker() {
+    private fun showBlocker(endHour: Int) {
         if (blocker != null) return
 
         val card = LinearLayout(this).apply {
@@ -49,7 +50,6 @@ class AppBlockingService : AccessibilityService() {
                 cornerRadius = 52f
             }
         }
-
         card.addView(TextView(this).apply {
             text = "♡"
             textSize = 46f
@@ -65,7 +65,7 @@ class AppBlockingService : AccessibilityService() {
             setPadding(0, 18, 0, 10)
         })
         card.addView(TextView(this).apply {
-            text = "o X fica quietinho até às 11h.\nque tal aproveitar esse tempinho?  ♡"
+            text = "esse aplicativo fica em pausa por enquanto.\nvolte quando seu horário terminar.  ♡"
             textSize = 15f
             setTextColor(Color.rgb(184, 117, 141))
             gravity = Gravity.CENTER
@@ -83,8 +83,7 @@ class AppBlockingService : AccessibilityService() {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             android.graphics.PixelFormat.TRANSLUCENT
         )
         try {
