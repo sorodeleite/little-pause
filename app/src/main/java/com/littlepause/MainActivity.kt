@@ -189,131 +189,19 @@ private fun PlannerHome() {
                 }
             }
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(24.dp)) {
-                    Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("horários de bloqueio  ♡", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-                                Text("escolha quando sua pausa começa e termina", color = Muted, fontSize = 11.sp)
-                            }
-                            Switch(
-                                checked = scheduleEnabled,
-                                onCheckedChange = {
-                                    scheduleEnabled = it
-                                    prefs.edit().putBoolean("schedule_enabled", it).apply()
-                                },
-                                colors = SwitchDefaults.colors(checkedThumbColor = Paper, checkedTrackColor = Rose)
-                            )
+                BlockSchedulesCard(
+                    isBlocking = isBlocking,
+                    onToggleBlocking = { enabled ->
+                        if (enabled) {
+                            prefs.edit().putBoolean("blocking_enabled", true).apply()
+                            context.startForegroundService(Intent(context, AppBlockingService::class.java))
+                        } else {
+                            prefs.edit().putBoolean("blocking_enabled", false).apply()
+                            context.stopService(Intent(context, AppBlockingService::class.java))
                         }
-                        Text("dias da semana", color = Ink, fontSize = 12.sp)
-                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                            listOf("D","S","T","Q","Q","S","S").forEachIndexed { index, day ->
-                                val key = (if (index == 0) 7 else index).toString()
-                                val active = key in scheduleDays
-                                Box(
-                                    Modifier.weight(1f).background(if (active) Blush else Cream, CircleShape)
-                                        .clickable {
-                                            val next = scheduleDays.toMutableSet()
-                                            if (active) next.remove(key) else next.add(key)
-                                            scheduleDays = next
-                                            prefs.edit().putStringSet("schedule_days", next).apply()
-                                        }.padding(vertical = 10.dp),
-                                    contentAlignment = Alignment.Center
-                                ) { Text(day, color = if (active) Rose else Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium) }
-                            }
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            TimeField("começa às", blockStart.substringBefore(":"),
-                                { v -> blockStart = "$v:${blockStart.substringAfter(":", "00")}"; prefs.edit().putString("block_start", blockStart).apply() },
-                                blockStart.substringAfter(":", "00"),
-                                { v -> blockStart = "${blockStart.substringBefore(":")}:$v"; prefs.edit().putString("block_start", blockStart).apply() },
-                                Modifier.weight(1f))
-                            TimeField("termina às", blockEnd.substringBefore(":"),
-                                { v -> blockEnd = "$v:${blockEnd.substringAfter(":", "00")}"; prefs.edit().putString("block_end", blockEnd).apply() },
-                                blockEnd.substringAfter(":", "00"),
-                                { v -> blockEnd = "${blockEnd.substringBefore(":")}:$v"; prefs.edit().putString("block_end", blockEnd).apply() },
-                                Modifier.weight(1f))
-                        }
-                        Text(
-                            if (scheduleEnabled) "seu bloqueio seguirá esses dias e horários ♡" else "ative para limitar o bloqueio aos horários escolhidos",
-                            color = Muted, fontSize = 11.sp
-                        )
+                        isBlocking = enabled
                     }
-                }
-            }
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Paper),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(17.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("seu cantinho de foco  ♡", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                            Text("sem Acessibilidade: usando o acesso ao uso do Android", color = Muted, fontSize = 11.sp)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("Acesso ao uso", color = Ink, fontSize = 13.sp)
-                                Text(if (usageAllowed) "autorizado ♡" else "necessário para identificar o app aberto", color = Muted, fontSize = 11.sp)
-                            }
-                            TextButton(onClick = {
-                                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                            }) { Text(if (usageAllowed) "abrir" else "permitir", color = Rose) }
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("Aparecer sobre outros apps", color = Ink, fontSize = 13.sp)
-                                Text(if (overlayAllowed) "autorizado ♡" else "necessário para mostrar a pausa", color = Muted, fontSize = 11.sp)
-                            }
-                            TextButton(onClick = {
-                                context.startActivity(
-                                    Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
-                                )
-                            }) { Text(if (overlayAllowed) "abrir" else "permitir", color = Rose) }
-                        }
-                        OutlinedButton(
-                            onClick = { showAppPicker = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text("escolher aplicativos  ·  ${selectedPackages.size} selecionados", color = Rose)
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                usageAllowed = hasUsageAccess(context)
-                                overlayAllowed = Settings.canDrawOverlays(context)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) { Text("atualizar permissões", color = Muted) }
-                        Button(
-                            onClick = {
-                                if (usageAllowed && overlayAllowed && selectedPackages.isNotEmpty()) {
-                                    prefs.edit().putBoolean("blocking_enabled", true).apply()
-                                    context.startForegroundService(Intent(context, AppBlockingService::class.java))
-                                    isBlocking = true
-                                }
-                            },
-                            enabled = usageAllowed && overlayAllowed && selectedPackages.isNotEmpty() && !isBlocking,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Rose)
-                        ) { Text("ativar bloqueio") }
-                        if (isBlocking) {
-                            TextButton(
-                                onClick = {
-                                    prefs.edit().putBoolean("blocking_enabled", false).apply()
-                                    context.stopService(Intent(context, AppBlockingService::class.java))
-                                    isBlocking = false
-                                },
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            ) { Text("desativar bloqueio", color = Rose) }
-                        }
-                    }
-                }
+                )
             }
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
@@ -587,66 +475,105 @@ private fun CalendarCard(
     val today = LocalDate.now()
     val firstDayOffset = month.atDay(1).dayOfWeek.value % 7
     val days = List(firstDayOffset) { null } + (1..month.lengthOfMonth()).map { it }
+    val weeks = days.chunked(7)
 
-    Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(24.dp)) {
-        Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDFC)),
+        shape = RoundedCornerShape(7.dp)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 3.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         month.month.getDisplayName(TextStyle.FULL, PtBr).replaceFirstChar { it.titlecase(PtBr) },
-                        color = Ink,
-                        fontSize = 21.sp,
+                        color = Color(0xFFB87588),
+                        fontSize = 23.sp,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(month.year.toString(), color = Muted, fontSize = 12.sp)
+                    Text(month.year.toString(), color = Color(0xFF9C9293), fontSize = 11.sp)
                 }
-                TextButton(onClick = onPrevious) { Text("‹", color = Rose, fontSize = 25.sp) }
-                TextButton(onClick = onNext) { Text("›", color = Rose, fontSize = 25.sp) }
-            }
-            Row(Modifier.fillMaxWidth()) {
-                listOf("dom", "seg", "ter", "qua", "qui", "sex", "sáb").forEach { label ->
-                    Text(label, color = Muted, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                TextButton(onClick = onPrevious, contentPadding = PaddingValues(horizontal = 7.dp, vertical = 2.dp)) {
+                    Text("‹", color = Color(0xFFB87588), fontSize = 27.sp)
+                }
+                TextButton(onClick = onNext, contentPadding = PaddingValues(horizontal = 7.dp, vertical = 2.dp)) {
+                    Text("›", color = Color(0xFFB87588), fontSize = 27.sp)
                 }
             }
-            days.chunked(7).forEach { week ->
+            Row(
+                Modifier.fillMaxWidth()
+                    .background(Color(0xFFFFF3F5))
+                    .border(0.6.dp, Color(0xFFE8D9D9))
+            ) {
+                listOf("dom", "seg", "ter", "qua", "qui", "sex", "sáb").forEachIndexed { index, label ->
+                    Box(
+                        Modifier.weight(1f).padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            label,
+                            color = if (index == 0) Color(0xFFC77F91) else Color(0xFF817779),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+            weeks.forEach { week ->
                 Row(Modifier.fillMaxWidth()) {
-                    week.forEach { day ->
+                    week.forEachIndexed { index, day ->
+                        val date = day?.let { month.atDay(it) }
+                        val isSelected = date == selectedDate
+                        val isToday = date == today
                         Box(
-                            modifier = Modifier.weight(1f).height(42.dp),
-                            contentAlignment = Alignment.Center
+                            Modifier.weight(1f)
+                                .height(57.dp)
+                                .background(
+                                    when {
+                                        isSelected -> Color(0xFFFFE8EE)
+                                        isToday -> Color(0xFFFFF5F7)
+                                        else -> Color(0xFFFFFEFD)
+                                    }
+                                )
+                                .border(0.55.dp, Color(0xFFE8DEDC))
+                                .then(if (date != null) Modifier.clickable { onSelectDate(date) } else Modifier)
+                                .padding(start = 5.dp, top = 5.dp),
+                            contentAlignment = Alignment.TopStart
                         ) {
                             if (day != null) {
-                                val date = month.atDay(day)
-                                val isSelected = date == selectedDate
-                                val isToday = date == today
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .background(
-                                            when {
-                                                isSelected -> Blush
-                                                isToday -> Lilac
-                                                else -> Color.Transparent
-                                            },
-                                            CircleShape
-                                        )
-                                        .clickable { onSelectDate(date) },
-                                    contentAlignment = Alignment.Center
-                                ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         day.toString(),
-                                        color = if (isSelected || isToday) Rose else Ink,
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected || isToday) FontWeight.SemiBold else FontWeight.Normal
+                                        color = when {
+                                            isSelected || isToday -> Color(0xFFB87588)
+                                            index == 0 -> Color(0xFFC77F91)
+                                            else -> Color(0xFF51494A)
+                                        },
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
                                     )
+                                    if (isToday) Text("hoje", color = Color(0xFFB87588), fontSize = 7.sp)
+                                    else if (isSelected) Text("♡", color = Color(0xFFB87588), fontSize = 8.sp)
                                 }
                             }
                         }
                     }
-                    repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
+                    repeat(7 - week.size) {
+                        Box(Modifier.weight(1f).height(57.dp).background(Color(0xFFFFFEFD)).border(0.55.dp, Color(0xFFE8DEDC)))
+                    }
                 }
             }
-            Text("toque em um dia para organizar sua agenda ♡", color = Muted, fontSize = 11.sp)
+            Text(
+                "toque em um dia para organizar sua agenda  ♡",
+                color = Color(0xFF9C9293),
+                fontSize = 10.sp,
+                modifier = Modifier.padding(start = 3.dp, top = 9.dp)
+            )
         }
     }
 }
