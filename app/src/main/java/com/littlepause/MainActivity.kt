@@ -93,6 +93,7 @@ private fun PlannerHome() {
     var reminderTime by remember { mutableStateOf("09:00") }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     var showAppPicker by remember { mutableStateOf(false) }
+    var appSearchQuery by remember { mutableStateOf("") }
     var selectedPackages by remember {
         mutableStateOf(prefs.getStringSet("blocked_apps", emptySet()).orEmpty())
     }
@@ -414,14 +415,31 @@ private fun PlannerHome() {
 
     if (showAppPicker) {
         AlertDialog(
-            onDismissRequest = { showAppPicker = false },
+            onDismissRequest = { showAppPicker = false; appSearchQuery = "" },
             title = { Text("quais apps entram na pausa? ♡", color = Ink) },
             text = {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 420.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(installedApps, key = { it.packageName }) { app ->
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    OutlinedTextField(
+                        value = appSearchQuery,
+                        onValueChange = { appSearchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("digite o nome do aplicativo...") },
+                        leadingIcon = { Text("⌕", color = Muted, fontSize = 20.sp) },
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    val filteredApps = installedApps.filter {
+                        it.label.contains(appSearchQuery.trim(), ignoreCase = true) ||
+                            it.packageName.contains(appSearchQuery.trim(), ignoreCase = true)
+                    }
+                    if (filteredApps.isEmpty()) {
+                        Text("nenhum aplicativo encontrado ♡", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(12.dp))
+                    }
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 340.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                    items(filteredApps, key = { it.packageName }) { app ->
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable {
                                 val next = selectedPackages.toMutableSet()
@@ -444,10 +462,11 @@ private fun PlannerHome() {
                             Text(app.label, color = Ink, fontSize = 14.sp)
                         }
                     }
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showAppPicker = false }) { Text("prontinho", color = Rose) }
+                TextButton(onClick = { showAppPicker = false; appSearchQuery = "" }) { Text("prontinho", color = Rose) }
             },
             containerColor = Cream
         )
