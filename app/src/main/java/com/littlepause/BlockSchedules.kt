@@ -48,6 +48,23 @@ private data class ScheduleApp(val packageName: String, val label: String)
 
 private fun readBlockSchedules(prefs: android.content.SharedPreferences): List<BlockSchedule> {
     val raw = runCatching { JSONArray(prefs.getString("block_schedules_json", "[]")) }.getOrNull() ?: JSONArray()
+    if (raw.length() == 0) {
+        val oldApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
+        if (oldApps.isNotEmpty()) {
+            val hadSchedule = prefs.getBoolean("schedule_enabled", false)
+            val oldDays = if (hadSchedule) prefs.getStringSet("schedule_days", setOf("1", "2", "3", "4", "5")).orEmpty()
+                else setOf("1", "2", "3", "4", "5", "6", "7")
+            return listOf(
+                BlockSchedule(
+                    id = System.currentTimeMillis(),
+                    start = if (hadSchedule) prefs.getString("block_start", "08:00") ?: "08:00" else "00:00",
+                    end = if (hadSchedule) prefs.getString("block_end", "18:00") ?: "18:00" else "23:59",
+                    days = oldDays,
+                    packages = oldApps
+                )
+            )
+        }
+    }
     return (0 until raw.length()).mapNotNull { index ->
         val item = raw.optJSONObject(index) ?: return@mapNotNull null
         val dayArray = item.optJSONArray("days") ?: JSONArray()
