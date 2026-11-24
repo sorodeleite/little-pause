@@ -1,14 +1,19 @@
 package com.littlepause
 
+import android.app.AlarmManager
 import android.app.AppOpsManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,6 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -44,6 +54,7 @@ private val Mist = Color(0xFFEAF0F7)
 private val PtBr = Locale("pt", "BR")
 private data class PlannerTask(val id: Long, val title: String, val done: Boolean)
 private data class AppChoice(val packageName: String, val label: String)
+private data class PauseReminder(val id: Long, val title: String, val date: String, val time: String, val enabled: Boolean)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +87,11 @@ private fun PlannerHome() {
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showTaskEditor by remember { mutableStateOf(false) }
     var newTask by remember { mutableStateOf("") }
+    var reminders by remember { mutableStateOf(loadReminders(prefs)) }
+    var showReminderEditor by remember { mutableStateOf(false) }
+    var reminderTitle by remember { mutableStateOf("") }
+    var reminderTime by remember { mutableStateOf("09:00") }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     var showAppPicker by remember { mutableStateOf(false) }
     var selectedPackages by remember {
         mutableStateOf(prefs.getStringSet("blocked_apps", emptySet()).orEmpty())
@@ -291,6 +307,54 @@ private fun PlannerHome() {
                 }
             }
             item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("little reminders  ♡", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                            Text("recadinhos para acompanhar seu dia", color = Muted, fontSize = 11.sp)
+                        }
+                        TextButton(onClick = { showReminderEditor = true }) { Text("+ novo", color = Rose) }
+                    }
+                    if (reminders.isEmpty()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
+                            Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("♡", color = Rose, fontSize = 23.sp)
+                                Text("seus recadinhos aparecem aqui", color = Ink, fontSize = 13.sp)
+                                Text("adicione uma mensagem, data e horário", color = Muted, fontSize = 11.sp)
+                            }
+                        }
+                    } else {
+                        reminders.forEach { reminder ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 13.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("♪  : ${reminder.title}", color = Ink, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                                        Switch(checked = reminder.enabled, onCheckedChange = { enabled ->
+                                            val updated = reminder.copy(enabled = enabled)
+                                            reminders = reminders.map { if (it.id == reminder.id) updated else it }
+                                            saveReminders(prefs, reminders)
+                                            scheduleReminder(context, updated)
+                                        }, colors = SwitchDefaults.colors(checkedThumbColor = Paper, checkedTrackColor = Rose))
+                                    }
+                                    Row(verticalAlignment = Alignment.Bottom) {
+                                        Text(reminder.time, color = Ink, fontSize = 34.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
+                                        Text(runCatching { LocalDate.parse(reminder.date).format(DateTimeFormatter.ofPattern("EEE, dd MMM", PtBr)) }.getOrDefault(reminder.date), color = Muted, fontSize = 12.sp)
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(if (reminder.enabled) "lembrete ativado ♡" else "pausado", color = Muted, fontSize = 10.sp, modifier = Modifier.weight(1f))
+                                        TextButton(onClick = {
+                                            cancelReminder(context, reminder.id)
+                                            reminders = reminders.filterNot { it.id == reminder.id }
+                                            saveReminders(prefs, reminders)
+                                        }) { Text("remover", color = Muted, fontSize = 10.sp) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Paper),
                     shape = RoundedCornerShape(24.dp)
@@ -385,6 +449,41 @@ private fun PlannerHome() {
             confirmButton = {
                 TextButton(onClick = { showAppPicker = false }) { Text("prontinho", color = Rose) }
             },
+            containerColor = Cream
+        )
+    }
+
+    if (showReminderEditor) {
+        AlertDialog(
+            onDismissRequest = { showReminderEditor = false },
+            title = { Text("um recadinho para você ♡", color = Ink) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(value = reminderTitle, onValueChange = { reminderTitle = it }, placeholder = { Text("ex.: hora de se arrumar") }, singleLine = true)
+                    OutlinedTextField(value = reminderTime, onValueChange = { reminderTime = it.filter { c -> c.isDigit() || c == ':' }.take(5) }, label = { Text("horário (HH:mm)") }, singleLine = true)
+                    Text("data: ${selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}", color = Muted, fontSize = 12.sp)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val title = reminderTitle.trim()
+                    val valid = reminderTime.matches(Regex("([01]?[0-9]|2[0-3]):[0-5][0-9]"))
+                    if (title.isNotEmpty() && valid) {
+                        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        val time = reminderTime.padStart(5, '0')
+                        val item = PauseReminder(System.currentTimeMillis(), title, selectedDate.toString(), time, true)
+                        reminders = reminders + item
+                        saveReminders(prefs, reminders)
+                        scheduleReminder(context, item)
+                        reminderTitle = ""
+                        reminderTime = "09:00"
+                        showReminderEditor = false
+                    }
+                }) { Text("salvar", color = Rose) }
+            },
+            dismissButton = { TextButton(onClick = { showReminderEditor = false }) { Text("cancelar", color = Muted) } },
             containerColor = Cream
         )
     }
@@ -593,6 +692,40 @@ private fun saveTasks(
 
 private fun taskKey(date: LocalDate) = "tasks_${date}"
 
+
+private fun loadReminders(prefs: android.content.SharedPreferences): List<PauseReminder> {
+    val json = runCatching { JSONArray(prefs.getString("pause_reminders_json", "[]")) }.getOrNull() ?: JSONArray()
+    return (0 until json.length()).mapNotNull { i ->
+        val item = json.optJSONObject(i) ?: return@mapNotNull null
+        PauseReminder(item.optLong("id"), item.optString("title"), item.optString("date"), item.optString("time"), item.optBoolean("enabled", true))
+    }
+}
+
+private fun saveReminders(prefs: android.content.SharedPreferences, reminders: List<PauseReminder>) {
+    val json = JSONArray()
+    reminders.forEach { r ->
+        json.put(JSONObject().put("id", r.id).put("title", r.title).put("date", r.date).put("time", r.time).put("enabled", r.enabled))
+    }
+    prefs.edit().putString("pause_reminders_json", json.toString()).apply()
+}
+
+private fun scheduleReminder(context: Context, reminder: PauseReminder) {
+    val intent = Intent(context, ReminderReceiver::class.java)
+        .putExtra("reminder_title", reminder.title)
+        .putExtra("reminder_id", reminder.id)
+    val pending = PendingIntent.getBroadcast(context, reminder.id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    if (!reminder.enabled) { alarm.cancel(pending); return }
+    val dateTime = runCatching { java.time.LocalDateTime.parse("${reminder.date}T${reminder.time}:00") }.getOrNull() ?: return
+    val millis = dateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+    if (millis > System.currentTimeMillis()) alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
+}
+
+private fun cancelReminder(context: Context, id: Long) {
+    val intent = Intent(context, ReminderReceiver::class.java)
+    val pending = PendingIntent.getBroadcast(context, id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pending)
+}
 
 private fun hasUsageAccess(context: Context): Boolean {
     val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
