@@ -83,6 +83,10 @@ private fun PlannerHome() {
     var usageAllowed by remember { mutableStateOf(hasUsageAccess(context)) }
     var overlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     var isBlocking by remember { mutableStateOf(prefs.getBoolean("blocking_enabled", false)) }
+    var scheduleEnabled by remember { mutableStateOf(prefs.getBoolean("schedule_enabled", false)) }
+    var scheduleDays by remember { mutableStateOf(prefs.getStringSet("schedule_days", setOf("1","2","3","4","5")).orEmpty()) }
+    var blockStart by remember { mutableStateOf(prefs.getString("block_start", "08:00") ?: "08:00") }
+    var blockEnd by remember { mutableStateOf(prefs.getString("block_end", "18:00") ?: "18:00") }
     val installedApps = remember(context) { loadLaunchableApps(context) }
     val tasks = remember(selectedDate) {
         loadTasks(prefs, selectedDate)
@@ -157,6 +161,59 @@ private fun PlannerHome() {
                         modifier = Modifier.weight(1f),
                         color = Lilac
                     )
+                }
+            }
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(24.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("horários de bloqueio  ♡", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                                Text("escolha quando sua pausa começa e termina", color = Muted, fontSize = 11.sp)
+                            }
+                            Switch(
+                                checked = scheduleEnabled,
+                                onCheckedChange = {
+                                    scheduleEnabled = it
+                                    prefs.edit().putBoolean("schedule_enabled", it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Paper, checkedTrackColor = Rose)
+                            )
+                        }
+                        Text("dias da semana", color = Ink, fontSize = 12.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            listOf("D","S","T","Q","Q","S","S").forEachIndexed { index, day ->
+                                val key = (if (index == 0) 7 else index).toString()
+                                val active = key in scheduleDays
+                                Box(
+                                    Modifier.weight(1f).background(if (active) Blush else Cream, CircleShape)
+                                        .clickable {
+                                            val next = scheduleDays.toMutableSet()
+                                            if (active) next.remove(key) else next.add(key)
+                                            scheduleDays = next
+                                            prefs.edit().putStringSet("schedule_days", next).apply()
+                                        }.padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { Text(day, color = if (active) Rose else Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            TimeField("começa às", blockStart.substringBefore(":"),
+                                { v -> blockStart = "$v:${blockStart.substringAfter(":", "00")}"; prefs.edit().putString("block_start", blockStart).apply() },
+                                blockStart.substringAfter(":", "00"),
+                                { v -> blockStart = "${blockStart.substringBefore(":")}:$v"; prefs.edit().putString("block_start", blockStart).apply() },
+                                Modifier.weight(1f))
+                            TimeField("termina às", blockEnd.substringBefore(":"),
+                                { v -> blockEnd = "$v:${blockEnd.substringAfter(":", "00")}"; prefs.edit().putString("block_end", blockEnd).apply() },
+                                blockEnd.substringAfter(":", "00"),
+                                { v -> blockEnd = "${blockEnd.substringBefore(":")}:$v"; prefs.edit().putString("block_end", blockEnd).apply() },
+                                Modifier.weight(1f))
+                        }
+                        Text(
+                            if (scheduleEnabled) "seu bloqueio seguirá esses dias e horários ♡" else "ative para limitar o bloqueio aos horários escolhidos",
+                            color = Muted, fontSize = 11.sp
+                        )
+                    }
                 }
             }
             item {
