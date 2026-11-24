@@ -78,12 +78,31 @@ class AppBlockingService : Service() {
         lastQueryTime = now
 
         val blockedApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
-        val shouldBlock = now >= temporarilyAllowedUntil &&
+        val scheduleAllows = !prefs.getBoolean("schedule_enabled", false) || isWithinSchedule(prefs, now)
+        val shouldBlock = scheduleAllows &&
+            now >= temporarilyAllowedUntil &&
             foregroundPackage != null &&
             foregroundPackage in blockedApps &&
             foregroundPackage != packageName
 
         if (shouldBlock) showPauseScreen() else hidePauseScreen()
+    }
+
+    private fun isWithinSchedule(prefs: android.content.SharedPreferences, nowMillis: Long): Boolean {
+        val days = prefs.getStringSet("schedule_days", emptySet()).orEmpty()
+        if (days.isEmpty()) return false
+        val now = java.time.Instant.ofEpochMilli(nowMillis).atZone(java.time.ZoneId.systemDefault())
+        val minuteNow = now.hour * 60 + now.minute
+        val startParts = (prefs.getString("block_start", "08:00") ?: "08:00").split(":")
+        val endParts = (prefs.getString("block_end", "18:00") ?: "18:00").split(":")
+        val start = (startParts.getOrNull(0)?.toIntOrNull() ?: 8) * 60 + (startParts.getOrNull(1)?.toIntOrNull() ?: 0)
+        val end = (endParts.getOrNull(0)?.toIntOrNull() ?: 18) * 60 + (endParts.getOrNull(1)?.toIntOrNull() ?: 0)
+        val today = now.dayOfWeek.value
+        if (start == end) return today.toString() in days
+        if (start < end) return today.toString() in days && minuteNow >= start && minuteNow < end
+        val previousDay = if (today == 1) 7 else today - 1
+        return (today.toString() in days && minuteNow >= start) ||
+            (previousDay.toString() in days && minuteNow < end)
     }
 
     private fun showPauseScreen() {
