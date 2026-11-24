@@ -77,15 +77,68 @@ class AppBlockingService : Service() {
         }
         lastQueryTime = now
 
-        val blockedApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
-        val scheduleAllows = !prefs.getBoolean("schedule_enabled", false) || isWithinSchedule(prefs, now)
-        val shouldBlock = scheduleAllows &&
-            now >= temporarilyAllowedUntil &&
-            foregroundPackage != null &&
-            foregroundPackage in blockedApps &&
-            foregroundPackage != packageName
+        val activePackage = foregroundPackage
+        val hasNewSchedules = runCatching {
+            org.json.JSONArray(prefs.getString("block_schedules_json", "[]")).length() > 0
+        }.getOrDefault(false)
+        val scheduledForThisApp = activePackage != null && isScheduledForPackage(prefs, activePackage, now)
+        val legacyApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
+        val legacyScheduleAllows = !prefs.getBoolean("schedule_enabled", false) || isWithinSchedule(prefs, now)
+        val legacyShouldBlock = !hasNewSchedules && legacyScheduleAllows &&
+            activePackage != null && activePackage in legacyApps
+        val shouldBlock = now >= temporarilyAllowedUntil &&
+            activePackage != null && activePackage != packageName &&
+            (if (hasNewSchedules) scheduledForThisApp else legacyShouldBlock)
 
         if (shouldBlock) showPauseScreen() else hidePauseScreen()
+    }
+
+    private fun isScheduledForPackage(
+        prefs: android.content.SharedPreferences,
+        appPackage: String,
+        nowMillis: Long
+    ): Boolean {
+        val schedules = runCatching {
+            org.json.JSONArray(prefs.getString("block_schedules_json", "[]"))
+        }.getOrNull() ?: return false
+        val current = java.time.Instant.ofEpochMilli(nowMillis).atZone(java.time.ZoneId.systemDefault())
+        val minuteNow = current.hour * 60 + current.minute
+        val today = current.dayOfWeek.value
+        val previousDay = if (today == 1) 7 else today - 1
+
+        for (index in 0 until schedules.length()) {
+            val item = schedules.optJSONObject(index) ?: continue
+            if (!item.optBoolean("enabled", true)) continue
+            val packages = item.optJSONArray("packages") ?: continue
+            var includesApp = false
+            for (appIndex in 0 until packages.length()) {
+                if (packages.optString(appIndex) == appPackage) {
+                    includesApp = true
+                    break
+                }
+            }
+            if (!includesApp) continue
+
+            val dayArray = item.optJSONArray("days") ?: continue
+            val selectedDays = (0 until dayArray.length()).map { dayArray.optString(it) }.toSet()
+            if (selectedDays.isEmpty()) continue
+
+            val startParts = item.optString("start", "08:00").split(":")
+            val endParts = item.optString("end", "18:00").split(":")
+            val start = (startParts.getOrNull(0)?.toIntOrNull() ?: 8) * 60 +
+                (startParts.getOrNull(1)?.toIntOrNull() ?: 0)
+            val end = (endParts.getOrNull(0)?.toIntOrNull() ?: 18) * 60 +
+                (endParts.getOrNull(1)?.toIntOrNull() ?: 0)
+
+            val active = when {
+                start == end -> today.toString() in selectedDays
+                start < end -> today.toString() in selectedDays && minuteNow >= start && minuteNow < end
+                else -> (today.toString() in selectedDays && minuteNow >= start) ||
+                    (previousDay.toString() in selectedDays && minuteNow < end)
+            }
+            if (active) return true
+        }
+        return false
     }
 
     private fun isWithinSchedule(prefs: android.content.SharedPreferences, nowMillis: Long): Boolean {
