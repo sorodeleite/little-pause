@@ -1,5 +1,5 @@
 :root{--accent-taupe-soft:#eadde0;--fonte-emoji:system-ui,sans-serif}
-*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:#fff;color:#2f2a2c;font-family:Nunito,Arial,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;min-height:100%;background:#fff;color:#2f2a2c;font-family:Nunito,Arial,sans-serif}#view-calendar{height:100%;}button,input,textarea,select{font:inherit}button{cursor:pointer}
    ganham o passo delas (`--cal-faixa-passo`, medido pelo app.js). ✧
    ══════════════════════════════════════════════════════════════ */
 #view-calendar {
