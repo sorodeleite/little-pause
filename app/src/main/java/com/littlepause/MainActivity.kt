@@ -3,6 +3,7 @@ package com.littlepause
 import android.app.AlarmManager
 import android.app.AppOpsManager
 import android.app.PendingIntent
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -91,6 +92,7 @@ private fun PlannerHome() {
     var showReminderEditor by remember { mutableStateOf(false) }
     var reminderTitle by remember { mutableStateOf("") }
     var reminderTime by remember { mutableStateOf("09:00") }
+    var dailyReportEnabled by remember { mutableStateOf(prefs.getBoolean("daily_usage_report_enabled", true)) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     var showAppPicker by remember { mutableStateOf(false) }
     var appSearchQuery by remember { mutableStateOf("") }
@@ -105,6 +107,12 @@ private fun PlannerHome() {
     var blockStart by remember { mutableStateOf(prefs.getString("block_start", "08:00") ?: "08:00") }
     var blockEnd by remember { mutableStateOf(prefs.getString("block_end", "18:00") ?: "18:00") }
     val installedApps = remember(context) { loadLaunchableApps(context) }
+    LaunchedEffect(dailyReportEnabled) {
+        prefs.edit().putBoolean("daily_usage_report_enabled", dailyReportEnabled).apply()
+        if (dailyReportEnabled) scheduleDailyUsageReport(context)
+        else cancelDailyUsageReport(context)
+    }
+
     val tasks = remember(selectedDate) {
         loadTasks(prefs, selectedDate)
     }
@@ -303,6 +311,36 @@ private fun PlannerHome() {
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) { Text("desativar bloqueio", color = Rose) }
+                        }
+                    }
+                }
+            }
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("seu resumo das 22h  ♡", color = Ink, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                                Text("um lembrete gentil sobre seu tempo de tela", color = Muted, fontSize = 11.sp)
+                            }
+                            Switch(
+                                checked = dailyReportEnabled,
+                                onCheckedChange = { enabled ->
+                                    dailyReportEnabled = enabled
+                                    if (enabled && Build.VERSION.SDK_INT >= 33 &&
+                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                    ) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                },
+                                colors = SwitchDefaults.colors(checkedThumbColor = Paper, checkedTrackColor = Rose)
+                            )
+                        }
+                        Text("Todos os dias, às 22h, você recebe seu tempo total no celular e uma comparação com filmes de 1h40.", color = Muted, fontSize = 11.sp)
+                        if (Build.VERSION.SDK_INT >= 33 &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            TextButton(onClick = { notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
+                                Text("permitir notificações", color = Rose)
+                            }
                         }
                     }
                 }
@@ -711,6 +749,28 @@ private fun saveTasks(
 
 private fun taskKey(date: LocalDate) = "tasks_${date}"
 
+
+private fun scheduleDailyUsageReport(context: Context) {
+    val intent = Intent(context, DailyUsageReceiver::class.java).setAction(DailyUsageReceiver.ACTION_REPORT)
+    val pending = PendingIntent.getBroadcast(
+        context, 2200, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val now = java.time.ZonedDateTime.now()
+    var next = now.toLocalDate().atTime(22, 0).atZone(now.zone)
+    if (!next.isAfter(now)) next = next.plusDays(1)
+    val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toInstant().toEpochMilli(), pending)
+}
+
+private fun cancelDailyUsageReport(context: Context) {
+    val intent = Intent(context, DailyUsageReceiver::class.java).setAction(DailyUsageReceiver.ACTION_REPORT)
+    val pending = PendingIntent.getBroadcast(
+        context, 2200, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pending)
+}
 
 private fun loadReminders(prefs: android.content.SharedPreferences): List<PauseReminder> {
     val json = runCatching { JSONArray(prefs.getString("pause_reminders_json", "[]")) }.getOrNull() ?: JSONArray()
