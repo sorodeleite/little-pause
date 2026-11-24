@@ -2,11 +2,13 @@ package com.littlepause
 
 import android.net.Uri
 import android.webkit.JavascriptInterface
+import android.webkit.ConsoleMessage
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -52,8 +54,36 @@ fun LittlePlaceCalendar(
                     LittlePauseCalendarBridge { date -> latestDateCallback.value(date) },
                     "LittlePauseCalendar"
                 )
-                webViewClient = WebViewClient()
+                webViewClient = object : WebViewClient() {
+                    override fun onReceivedError(
+                        view: WebView?,
+                        request: android.webkit.WebResourceRequest?,
+                        error: android.webkit.WebResourceError?
+                    ) {
+                        super.onReceivedError(view, request, error)
+                        if (request?.isForMainFrame == true) {
+                            Log.e("LittlePauseCalendar", "Falha ao carregar calendário: ${error?.description}")
+                        }
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        view?.evaluateJavascript(
+                            "document.querySelectorAll('.cal-day-cell').length.toString()"
+                        ) { count ->
+                            Log.d("LittlePauseCalendar", "Calendário carregado; células: $count")
+                        }
+                    }
+                }
                 webChromeClient = object : WebChromeClient() {
+                    override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                        Log.e(
+                            "LittlePauseCalendar",
+                            "${message.message()} (linha ${message.lineNumber()})"
+                        )
+                        return true
+                    }
+
                     override fun onShowFileChooser(
                         webView: WebView?,
                         filePathCallback: ValueCallback<Array<Uri>>?,
