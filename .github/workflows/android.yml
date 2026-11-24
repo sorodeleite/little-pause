@@ -51,20 +51,18 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: little-pause-0.4.0
+          name: little-pause-0.4.1
           path: little-pause.apk
           if-no-files-found: error
 
       - name: Publish signed update
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v0.4.0
-          name: Little Pause 0.4.0
+          tag_name: v0.4.1
+          name: Little Pause 0.4.1
           body: |
             Atualização do Little Pause.
 
             Baixe little-pause.apk e instale pelo próprio aplicativo.
           files: little-pause.apk
           overwrite_files: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
