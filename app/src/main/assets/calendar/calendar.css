@@ -1,0 +1,371 @@
+   ganham o passo delas (`--cal-faixa-passo`, medido pelo app.js). ✧
+   ══════════════════════════════════════════════════════════════ */
+#view-calendar {
+  /* os valores de fábrica (o JS troca pelas escolhas da pessoa) */
+  --cal-fundo: #ffffff;
+  --cal-cabecalho: #e8617e13;
+  --cal-hoje: #e8617e1a;
+  --cal-celula: #ffffffdb;
+  --cal-celula-cheia: #ffffff;
+  --cal-linha: #eee1e7;
+  --cal-texto: #2f2a2c;
+  --cal-domingo-cor: #e8617e;
+  --cal-fonte: 'Gowun Batang', Georgia, 'Times New Roman', serif;
+  --cal-faixa-passo: 16px;
+  --cal-celula-base: 62px;
+  /* ✧ a agenda ocupa a tela inteira: o papel escolhido é o fundo da
+     própria vista, sem cartãozinhos com margem em volta ✧ */
+  padding: 0;
+  background: var(--cal-fundo);
+  overflow-y: auto;
+}
+
+.calendar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  /* o título do mês acompanha a LARGURA DO APP (não a da janela: no
+     computador o app fica num quadradinho no meio da tela) ✧ */
+  container-type: inline-size;
+}
+
+/* ── o topo: o mês grande e rosa + os botõezinhos ── */
+.calendar-top-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 10px 7px;
+}
+
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cal-month-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: clamp(19px, 6cqw, 34px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  color: var(--cal-domingo-cor);
+  text-transform: lowercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+
+.cal-nav-btn,
+.cal-zoom-btn {
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 5px;
+  background: #ffffff;
+  border: 1px solid var(--accent-taupe-soft);
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif, var(--fonte-emoji);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cal-domingo-cor);
+  cursor: pointer;
+}
+.cal-nav-btn { min-width: 24px; height: 24px; font-size: 16px; }
+.cal-nav-btn:hover,
+.cal-zoom-btn:hover { background: #fff5f8; }
+.cal-theme-btn { background: #ffeef4; }
+
+/* ── o papeizinho do calendário ── */
+.calendar-decor-card {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* o calendário preenche a telinha inteira (as linhas dos dias se
+     esticam pra caber, do jeitinho das agendas da foto); se a tela for
+     baixinha demais, ele cresce e a vista rola em vez de cortar ✧ */
+  flex: 1 1 auto;
+  min-height: min-content;
+  /* o papel é o da vista; o cartãozinho só desenha a bordinha da agenda ✧ */
+  background: transparent;
+  border: 1px solid var(--cal-linha);
+  border-radius: 0;
+  box-shadow: none;
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+  overflow: hidden;
+  /* as fontes do calendário crescem/encolhem junto com o cartãozinho ✧ */
+  container-type: inline-size;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  color: var(--cal-texto);
+}
+
+/* ── a fileira de dom…sáb ── */
+.weekdays-grid {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: clamp(9px, 2.6cqw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cal-texto);
+  background: var(--cal-cabecalho);
+  border-bottom: 1px solid var(--cal-linha);
+}
+.weekdays-grid span {
+  padding: clamp(4px, 1.4cqw, 9px) 0 clamp(3px, 1.2cqw, 8px);
+  border-left: 1px solid var(--cal-linha);
+}
+.weekdays-grid span:first-child { border-left: 0; }
+#view-calendar[data-domingo="sim"] .weekdays-grid [data-dia="dom"] { color: var(--cal-domingo-cor); }
+
+/* ── a grade dos dias (o calendário em si) ── */
+.days-grid {
+  position: relative;
+  display: grid;
+  /* as linhas dividem a altura que sobra: o calendário ocupa a tela toda ✧ */
+  flex: 1 1 auto;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(min-content, 1fr);
+  gap: 0;
+  padding: 0;
+}
+
+.cal-day-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  /* o quadradinho cresce quando a semana tem barrinhas (o JS põe quantas) ✧ */
+  min-height: calc(var(--cal-celula-base) + var(--cal-linhas, 0) * var(--cal-faixa-passo));
+  padding: clamp(3px, 1.2cqw, 7px) clamp(4px, 1.4cqw, 8px);
+  background: var(--cal-celula);
+  border-left: 1px solid var(--cal-linha);
+  border-bottom: 1px solid var(--cal-linha);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  color: var(--cal-texto);
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.14s ease;
+}
+.days-grid .cal-day-cell:nth-child(7n + 1) { border-left: 0; }
+.cal-day-cell:hover { background: var(--cal-celula-cheia); }
+
+.cal-day-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.cal-day-num {
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: clamp(14px, 4.5cqw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--cal-texto);
+  flex: 0 0 auto;
+}
+
+/* o numerinho cinza do lado (dia do ano, semana ou a data) */
+.cal-day-mini {
+  margin-left: auto;
+  padding-top: 2px;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: clamp(7px, 1.75cqw, 11px);
+  font-weight: 400;
+  color: var(--cal-texto);
+  opacity: 0.38;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+/* o domingo vermelhinho da agenda ✧ */
+#view-calendar[data-domingo="sim"] .cal-day-cell.is-domingo .cal-day-num { color: var(--cal-domingo-cor); }
+
+.cal-day-cell.other-month { background: rgba(255, 255, 255, 0.4); }
+.cal-day-cell.other-month .cal-day-num { opacity: 0.34; }
+.cal-day-cell.other-month .cal-day-mini { opacity: 0.2; }
+
+/* hoje: um veuzinho rosa, do jeitinho da agenda ✧ */
+.cal-day-cell.today { background: var(--cal-hoje); }
+.cal-day-cell.today .cal-day-num { color: var(--cal-domingo-cor); font-weight: 700; }
+
+/* a estrelinha de "tem página no diário" (bem discreta, embaixo) */
+.cal-day-cell.has-entry::after {
+  content: '✦';
+  position: absolute;
+  left: 6px;
+  bottom: 1px;
+  font-size: clamp(6px, 1.8cqw, 10px);
+  line-height: 1;
+  color: var(--cal-domingo-cor);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* a carinha do dia */
+.cal-day-reaction {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: clamp(9px, 2.6cqw, 14px);
+  line-height: 1;
+}
+
+/* ── ✧ A FOTO DO DIA (preenche o quadradinho) ✧ ──
+   Ela entra como a primeira coisinha do dia (fica atrás do número e das
+   barrinhas). Com a classe `foto-na-frente` o quadradinho sobe por cima
+   da grade e a foto cobre o texto — é a escolha "por cima do texto". ✧ */
+.cal-day-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.cal-day-cell.tem-foto .cal-day-top {
+  position: relative;
+  z-index: 1;
+  /* a letrinha aparece por cima da foto, com uma sombrinha branca ✧ */
+  text-shadow: 0 1px 0 #ffffff, 0 0 5px rgba(255, 255, 255, 0.95);
+}
+
+.cal-day-cell.foto-na-frente {
+  z-index: 4;
+}
+.cal-day-cell.foto-na-frente .cal-day-photo {
+  z-index: 3;
+}
+/* o numerozinho do dia continua à vista por cima de tudo ✧ */
+.cal-day-cell.foto-na-frente .cal-day-top,
+.cal-day-cell.foto-na-frente .cal-day-reaction {
+  z-index: 4;
+}
+
+/* ── ✧ AS BARRINHAS (as tarefinas e os eventos de vários dias) ✧ ──
+   Elas são botõezinhos posicionados por cima da grade (o app.js mede
+   cada quadradinho), então uma barra de vários dias atravessa as linhas
+   dos dias sem emendar. O texto aparece no pedacinho em que ela começa. ✧ */
+.cal-days-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.cal-faixa {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 0;
+  background: var(--faixa-cor, #f7b0c6);
+  color: var(--faixa-texto, #4a3a34);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: clamp(6.5px, 1.85cqw, 11px);
+  font-weight: 700;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.cal-faixa.comeca-aqui {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+.cal-faixa.termina-aqui {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+.cal-faixa:hover { filter: brightness(0.96); }
+.cal-faixa.is-evento { box-shadow: 0 1px 2px rgba(70, 53, 41, 0.08); }
+
+/* o preview das tarefinas na janelinha (o mesmo bloquinho de sempre) */
+.cal-day-task {
+  display: block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--cal-tarefa-cor, #f9d3e0);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #4a3a34;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-day-task.tarefa-mais {
+  background: transparent;
+  color: var(--cal-texto);
+  opacity: 0.5;
+  padding-left: 2px;
+}
+
+/* ── os jeitinhos dos quadradinhos ── */
+#view-calendar[data-quadros="cartoes"] .days-grid { gap: 3px; padding: 6px; }
+#view-calendar[data-quadros="cartoes"] .cal-day-cell {
+  border: 1px solid var(--cal-linha);
+  border-radius: 8px;
+}
+#view-calendar[data-quadros="cartoes"] .weekdays-grid {
+  background: transparent;
+  border-bottom: 0;
+}
+#view-calendar[data-quadros="cartoes"] .weekdays-grid span { border-left: 0; }
+
+#view-calendar[data-quadros="redondos"] .days-grid { gap: 3px; padding: 6px; }
+#view-calendar[data-quadros="redondos"] .cal-day-cell {
+  border: 1px solid var(--cal-linha);
+  border-radius: 13px;
+}
+#view-calendar[data-quadros="redondos"] .weekdays-grid { background: transparent; border-bottom: 0; }
+#view-calendar[data-quadros="redondos"] .weekdays-grid span { border-left: 0; }
+
+#view-calendar[data-quadros="limpos"] .cal-day-cell {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--cal-linha);
+}
+#view-calendar[data-quadros="limpos"] .weekdays-grid { background: transparent; border-bottom: 0; }
+#view-calendar[data-quadros="limpos"] .weekdays-grid span { border-left: 0; }
+#view-calendar[data-quadros="limpos"] .cal-day-cell.today { background: var(--cal-hoje); }
+
+
+/* ══════════════════════════════════════════════════════════════
+   DIÁRIO FOLHEÁVEL: O LIVRINHO ABERTO DE DUAS PÁGINAS ✧
