@@ -371,6 +371,7 @@
 
 /* ══════════════════════════════════════════════════════════════
    DIÁRIO FOLHEÁVEL: O LIVRINHO ABERTO DE DUAS PÁGINAS ✧
+*/
 .calendar-bottom-tools{display:flex;align-items:center;gap:7px;padding:8px 10px;color:#9c9293;font:10px Nunito,sans-serif}.calendar-bottom-tools button,.soft-action{border:1px solid #eadde0;border-radius:999px;background:#fff7fa;color:#a86f80;padding:7px 10px;font-size:11px}.calendar-bottom-tools span{margin-left:auto}
 .cal-modal{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;padding:12px}.cal-modal.open{display:flex}.cal-modal-backdrop{position:absolute;inset:0;background:#33252b66}.cal-modal-card{position:relative;z-index:1;width:min(100%,520px);max-height:92dvh;overflow:auto;background:#fffdfc;border:1px solid #eadde0;border-radius:18px;padding:16px;box-shadow:0 14px 45px #4a303022}
 .cal-modal-card header,.sticker-picker-card header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.cal-modal-card header h2{margin:0;color:#b87588;font:700 20px 'Gowun Batang',Georgia,serif}.cal-modal-card header p{margin:4px 0 0;color:#9c9293;font-size:11px}.cal-modal-card header button,.sticker-picker-card header button{border:0;background:transparent;color:#b87588;font-size:20px}
