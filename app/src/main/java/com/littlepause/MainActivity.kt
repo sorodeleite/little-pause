@@ -28,6 +28,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -165,12 +166,11 @@ private fun PlannerHome() {
                 }
             }
             item {
-                CalendarCard(
-                    month = month,
-                    selectedDate = selectedDate,
-                    onPrevious = { month = month.minusMonths(1) },
-                    onNext = { month = month.plusMonths(1) },
-                    onSelectDate = { selectedDate = it }
+                LittlePlaceCalendar(
+                    modifier = Modifier.fillMaxWidth().height(620.dp),
+                    onDateSelected = { value ->
+                        runCatching { LocalDate.parse(value) }.onSuccess { selectedDate = it }
+                    }
                 )
             }
             item {
