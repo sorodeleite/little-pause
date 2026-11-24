@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_SIGNING_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -26,28 +28,46 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build debug APK
-        run: gradle assembleDebug
+      - name: Build signed release APK
+        if: env.HAS_SIGNING_KEY == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/little-pause-release.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          LITTLE_PAUSE_KEYSTORE_PATH="$KEYSTORE_PATH" \
+          LITTLE_PAUSE_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
+          LITTLE_PAUSE_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
+          LITTLE_PAUSE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
+          gradle assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk little-pause.apk
 
-      - name: Prepare APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk little-pause.apk
+      - name: Build preview APK (signing setup still needed)
+        if: env.HAS_SIGNING_KEY != 'true'
+        run: |
+          gradle assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk little-pause.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: little-pause-0.3.6
+          name: little-pause-0.3.7
           path: little-pause.apk
           if-no-files-found: error
 
-      - name: Publish direct APK download
+      - name: Publish signed update
+        if: env.HAS_SIGNING_KEY == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v0.3.6
-          name: Little Pause 0.3.6
+          tag_name: v0.3.7
+          name: Little Pause 0.3.7
           body: |
-            Versão de teste do Little Pause.
+            Atualização do Little Pause.
 
-            Baixe o arquivo little-pause.apk e instale manualmente no Android.
+            Baixe little-pause.apk e instale pelo próprio aplicativo.
           files: little-pause.apk
           overwrite_files: true
         env:
