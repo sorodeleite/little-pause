@@ -53,7 +53,7 @@ function renderBands(layout,dates){
  })}});grid.appendChild(overlay);
 }
 function openDay(date){
- selected=date;const d=parse(date);$('day-title').textContent='tarefinhas do dia';$('day-date-label').textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' ⋆';
+ selected=date;try{window.LittlePauseCalendar?.onDateSelected?.(date)}catch{}const d=parse(date);$('day-title').textContent='tarefinhas do dia';$('day-date-label').textContent=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+' ⋆';
  $('day-tasks').value=notes[date]||'';$('event-title').value='';$('event-end').value=date;activeReaction=reactions[date]||'';renderReactions();renderEventColors();renderEventList();$('photo-front').checked=!!photos[date]?.front;$('day-modal').classList.add('open');renderTaskPreview();
 }
 function renderTaskPreview(){const box=$('task-preview');box.innerHTML='';taskLines($('day-tasks').value).forEach((t,i)=>{const e=document.createElement('span');e.className='cal-day-task';e.style.setProperty('--cal-tarefa-cor',C.corDaTarefa(theme,i));e.textContent=t;box.appendChild(e)})}
