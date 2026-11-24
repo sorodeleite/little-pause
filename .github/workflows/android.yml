@@ -11,8 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      HAS_SIGNING_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -28,28 +26,27 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build signed release APK
-        if: env.HAS_SIGNING_KEY == 'true'
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Prepare the same signing key used by My Sleep Angel
         run: |
-          KEYSTORE_PATH="$RUNNER_TEMP/little-pause-release.jks"
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-          LITTLE_PAUSE_KEYSTORE_PATH="$KEYSTORE_PATH" \
-          LITTLE_PAUSE_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
-          LITTLE_PAUSE_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
-          LITTLE_PAUSE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
+          mkdir -p signing
+          curl --fail --location --silent --show-error \
+            https://raw.githubusercontent.com/sorodeleite/sleep-my-angel/main/android/keystore/sleep-my-angel.jks \
+            --output signing/little-pause.jks
+          test -s signing/little-pause.jks
+
+      - name: Build signed release APK
+        run: |
+          LITTLE_PAUSE_KEYSTORE_PATH="$GITHUB_WORKSPACE/signing/little-pause.jks" \
+          LITTLE_PAUSE_KEYSTORE_PASSWORD="android" \
+          LITTLE_PAUSE_KEY_ALIAS="androiddebugkey" \
+          LITTLE_PAUSE_KEY_PASSWORD="android" \
           gradle assembleRelease
           cp app/build/outputs/apk/release/app-release.apk little-pause.apk
 
-      - name: Build preview APK (signing setup still needed)
-        if: env.HAS_SIGNING_KEY != 'true'
+      - name: Verify APK signature
         run: |
-          gradle assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk little-pause.apk
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs little-pause.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -59,7 +56,6 @@ jobs:
           if-no-files-found: error
 
       - name: Publish signed update
-        if: env.HAS_SIGNING_KEY == 'true'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v0.3.7
