@@ -114,6 +114,27 @@ private fun PlannerHome() {
             contentPadding = PaddingValues(bottom = 18.dp)
         ) {
             item {
+                Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("soft days  †  little moments", color = Ink, fontSize = 15.sp)
+                        Box(Modifier.fillMaxWidth().height(104.dp).background(Mist, RoundedCornerShape(5.dp)), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("୨୧       ✧       ୨୧", color = Muted, fontSize = 25.sp)
+                                Text("a little space to breathe", color = Ink, fontSize = 14.sp)
+                                Text("♡  slow down, you're doing fine  ♡", color = Muted, fontSize = 10.sp)
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("♡ gentle", "✧ dreamy", "☁ calm").forEachIndexed { index, label ->
+                                Box(Modifier.weight(1f).background(if (index == 1) Blush else Cream, RoundedCornerShape(8.dp)).padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
+                                    Text(label, color = Muted, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
                 CalendarCard(
                     month = month,
                     selectedDate = selectedDate,
