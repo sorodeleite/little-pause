@@ -33,13 +33,14 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val Cream = Color(0xFFFFF8F5)
+private val Cream = Color(0xFFF7F8FA)
 private val Paper = Color(0xFFFFFFFF)
-private val Blush = Color(0xFFF5E2E8)
-private val Rose = Color(0xFFB8758D)
-private val Ink = Color(0xFF705A61)
-private val Lilac = Color(0xFFF0ECF6)
-private val Muted = Color(0xFFB49AA3)
+private val Blush = Color(0xFFF4EDF2)
+private val Rose = Color(0xFF9B8796)
+private val Ink = Color(0xFF29272B)
+private val Lilac = Color(0xFFEEF2F7)
+private val Muted = Color(0xFF9A9AA3)
+private val Mist = Color(0xFFEAF0F7)
 private val PtBr = Locale("pt", "BR")
 private data class PlannerTask(val id: Long, val title: String, val done: Boolean)
 private data class AppChoice(val packageName: String, val label: String)
@@ -96,14 +97,14 @@ private fun PlannerHome() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text("um cantinho para respirar  ♡", color = Rose, fontSize = 12.sp)
-                Text("little pause", color = Ink, fontSize = 29.sp, fontWeight = FontWeight.SemiBold)
+                Text("00.  ( sweetest pause )  ˚♡", color = Muted, fontSize = 12.sp)
+                Text("little pause", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Normal)
             }
             Box(
-                modifier = Modifier.size(46.dp).background(Blush, CircleShape),
+                modifier = Modifier.size(46.dp).background(Mist, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("♡", color = Rose, fontSize = 27.sp)
+                Text("୨୧", color = Rose, fontSize = 24.sp)
             }
         }
 
