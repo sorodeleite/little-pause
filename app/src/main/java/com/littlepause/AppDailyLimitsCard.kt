@@ -1,16 +1,30 @@
-﻿package com.littlepause
+package com.littlepause
 
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,20 +83,20 @@ fun AppDailyLimitsCard() {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("limites diÃ¡rios por app â™¡", fontSize = 16.sp, color = Ink)
-                    Text("tempo acumulado em todas as sessÃµes do dia", fontSize = 11.sp, color = Muted)
+                    Text("limites diários por app ♡", fontSize = 16.sp, color = Ink)
+                    Text("tempo acumulado em todas as sessões do dia", fontSize = 11.sp, color = Muted)
                 }
                 TextButton(onClick = { picker = true; query = "" }) {
                     Text("+ adicionar", color = RoseDeep, fontSize = 12.sp)
                 }
             }
             if (limits.isEmpty()) {
-                Text("nenhum limite configurado ainda â™¡", color = Muted, fontSize = 12.sp)
+                Text("nenhum limite configurado ainda ♡", color = Muted, fontSize = 12.sp)
             }
             limits.forEach { (pkg, value) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        (apps.firstOrNull { it.pkg == pkg }?.label ?: pkg) + " Â· " + value + " min/dia",
+                        (apps.firstOrNull { it.pkg == pkg }?.label ?: pkg) + " · " + value + " min/dia",
                         Modifier.weight(1f), fontSize = 12.sp, color = Ink
                     )
                     TextButton(onClick = {
@@ -90,11 +104,11 @@ fun AppDailyLimitsCard() {
                         minutes = value.toString()
                     }) { Text("editar", color = RoseDeep, fontSize = 11.sp) }
                     TextButton(onClick = { save(limits - pkg) }) {
-                        Text("Ã—", color = Muted, fontSize = 14.sp)
+                        Text("×", color = Muted, fontSize = 14.sp)
                     }
                 }
             }
-            Text("ao atingir o limite, o app entra na pausa atÃ© o prÃ³ximo dia â™¡", color = Muted, fontSize = 10.sp)
+            Text("ao atingir o limite, o app entra na pausa até o próximo dia ♡", color = Muted, fontSize = 10.sp)
         }
     }
 
@@ -103,7 +117,7 @@ fun AppDailyLimitsCard() {
             onDismissRequest = { picker = false },
             containerColor = Paper,
             shape = RoundedCornerShape(24.dp),
-            title = { Text("escolha um aplicativo â™¡", color = Ink) },
+            title = { Text("escolha um aplicativo ♡", color = Ink) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -144,7 +158,7 @@ fun AppDailyLimitsCard() {
             title = { Text(app.label, color = Ink) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("limite diÃ¡rio acumulado", color = Muted, fontSize = 12.sp)
+                    Text("limite diário acumulado", color = Muted, fontSize = 12.sp)
                     OutlinedTextField(
                         value = minutes,
                         onValueChange = { minutes = it.filter(Char::isDigit).take(4) },

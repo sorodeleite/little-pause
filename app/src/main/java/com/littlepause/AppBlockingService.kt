@@ -1,4 +1,4 @@
-﻿package com.littlepause
+package com.littlepause
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -30,7 +30,6 @@ class AppBlockingService : Service() {
     private var overlayTimer: TextView? = null
     private var overlayPrimary: TextView? = null
     private var overlayEscape: TextView? = null
-    private var overlayHint: TextView? = null
     private var overlayPackage: String? = null
     private var countdownTask: Runnable? = null
     private var foregroundPackage: String? = null
@@ -71,7 +70,7 @@ class AppBlockingService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // a pessoa deslizou o app da lista recente: a pausa continua de pÃ©
+        // a pessoa deslizou o app para fora das recentes: a pausa continua de pé
         if (KeepAlive.isBlockingEnabled(this)) KeepAlive.scheduleWatchdog(this)
         super.onTaskRemoved(rootIntent)
     }
@@ -243,7 +242,7 @@ class AppBlockingService : Service() {
             (previousDay.toString() in days && minuteNow < end)
     }
 
-    /* â”€â”€ a telinha da pausa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── a telinha da pausa ───────────────────────────────────── */
 
     private fun showPauseScreen(blockedPackage: String, dailyLimitReached: Boolean) {
         if (!android.provider.Settings.canDrawOverlays(this)) return
@@ -268,16 +267,17 @@ class AppBlockingService : Service() {
             setPadding(dp(34), dp(28), dp(34), dp(28))
         }
 
-        column.addView(text("à­¨à­§", 20f, ROSE, center = true))
+        column.addView(text("୨୧", 20f, ROSE, center = true))
         column.addView(text("uma pausinha antes de continuar", 25f, INK, center = true, top = 10))
-        val labelView = text(messageFor(label, dailyLimitReached), 13f, MUTED, center = true, top = 10).also {
-            overlayLabel = it
-        }
-        column.addView(labelView)
-        column.addView(text("â™¡", 34f, ROSE, center = true, top = 18))
-
-        val timer = text("respira comigo...", 12f, ROSE_DEEP, center = true, top = 6).also { overlayTimer = it }
-        column.addView(timer)
+        column.addView(
+            text(messageFor(label, dailyLimitReached), 13f, MUTED, center = true, top = 10)
+                .also { overlayLabel = it }
+        )
+        column.addView(text("♡", 34f, ROSE, center = true, top = 18))
+        column.addView(
+            text("respira comigo...", 12f, ROSE_DEEP, center = true, top = 6)
+                .also { overlayTimer = it }
+        )
 
         val primary = actionButton("voltar para o meu dia", filled = true) {
             hidePauseScreen()
@@ -294,9 +294,9 @@ class AppBlockingService : Service() {
         }.also { overlayEscape = it }
         column.addView(escape, buttonParams(top = 8))
 
-        val hint = text("se continuar, essa pausa volta em 1 minuto â™¡", 10f, MUTED, center = true, top = 14)
-            .also { overlayHint = it }
-        column.addView(hint)
+        column.addView(
+            text("se continuar, essa pausa volta em 1 minuto ♡", 10f, MUTED, center = true, top = 14)
+        )
 
         root.addView(
             column,
@@ -338,22 +338,21 @@ class AppBlockingService : Service() {
     }
 
     private fun messageFor(label: String, dailyLimitReached: Boolean): String = if (dailyLimitReached) {
-        "o tempinho de hoje de Â«$labelÂ» jÃ¡ foi. amanhÃ£ ele volta cheio de novidades â™¡"
+        "o tempinho de hoje de «$label» já foi. amanhã ele volta cheio de novidades ♡"
     } else {
-        "Â«$labelÂ» fica quietinho por enquanto. vocÃª escolheu esse horÃ¡rio para respirar."
+        "«$label» fica quietinho por enquanto. você escolheu esse horário para respirar."
     }
 
     private fun startBreathingCountdown() {
         countdownTask?.let { handler.removeCallbacks(it) }
-        val seconds = breathingSeconds()
+        var remaining = breathingSeconds()
         setActionsEnabled(false)
-        overlayTimer?.text = "respira comigo... ${seconds}s"
-        var remaining = seconds
+        overlayTimer?.text = "respira comigo... ${remaining}s"
         val task = object : Runnable {
             override fun run() {
                 remaining -= 1
                 if (remaining <= 0) {
-                    overlayTimer?.text = "prontinho â™¡"
+                    overlayTimer?.text = "prontinho ♡"
                     setActionsEnabled(true)
                     countdownTask = null
                     return
@@ -373,7 +372,7 @@ class AppBlockingService : Service() {
         }
     }
 
-    /** quanto mais vezes fugir, mais tempo respirando (atÃ© 45 s) */
+    /** quanto mais vezes fugir, mais tempo respirando (até 45 s) */
     private fun breathingSeconds(): Int {
         val prefs = getSharedPreferences(KeepAlive.PREFS, MODE_PRIVATE)
         val today = java.time.LocalDate.now().toString()
@@ -403,7 +402,6 @@ class AppBlockingService : Service() {
         overlayTimer = null
         overlayPrimary = null
         overlayEscape = null
-        overlayHint = null
     }
 
     private fun text(
@@ -427,7 +425,7 @@ class AppBlockingService : Service() {
             textSize = 13f
             gravity = Gravity.CENTER
             typeface = Typeface.DEFAULT
-            setTextColor(if (filled) AndroidColor.WHITE else TEXT_MUTED)
+            setTextColor(if (filled) AndroidColor.WHITE else MUTED)
             background = if (filled) rounded(ROSE, 18) else roundedWithStroke(16)
             setPadding(dp(22), dp(13), dp(22), dp(13))
             isClickable = true
@@ -461,7 +459,7 @@ class AppBlockingService : Service() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
-    /* â”€â”€ notificaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── notificação ──────────────────────────────────────────── */
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -469,7 +467,7 @@ class AppBlockingService : Service() {
                 CHANNEL_ID,
                 "Pausa ativa",
                 NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "mantÃ©m a pausa viva enquanto vocÃª foca" }
+            ).apply { description = "mantém a pausa viva enquanto você foca" }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
@@ -484,7 +482,7 @@ class AppBlockingService : Service() {
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_heart_notification)
             .setContentTitle("little pause")
-            .setContentText("seu cantinho de foco estÃ¡ ativo â™¡")
+            .setContentText("seu cantinho de foco está ativo ♡")
             .setContentIntent(openApp)
             .setOngoing(true)
             .build()

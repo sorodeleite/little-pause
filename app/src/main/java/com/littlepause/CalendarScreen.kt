@@ -1,9 +1,8 @@
-﻿package com.littlepause
+package com.littlepause
 
 import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,8 +11,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 
 /**
- * O calendÃ¡rio ocupa a tela inteira: assim o Android nÃ£o corta as bordas
- * dele com a barra de status, o notch ou a barra de navegaÃ§Ã£o. A pÃ¡gina
+ * O calendário ocupa a tela inteira: assim o Android não corta as bordas
+ * dele com a barra de status, o notch ou a barra de navegação. A página
  * rola sozinha por dentro do webview.
  */
 @Composable
@@ -35,7 +34,7 @@ internal fun CalendarScreen(onLeave: () -> Unit) {
     }
 
     CalendarView(
-        modifier = Modifier.fillMaxSize().fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         onReady = { webView = it }
     )
 }

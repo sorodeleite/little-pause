@@ -1,4 +1,4 @@
-﻿package com.littlepause
+package com.littlepause
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -64,14 +64,14 @@ internal fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text("00.  ( sweetest pause )  Ëšâ™¡", color = Muted, fontSize = 11.sp)
+                Text("00.  ( sweetest pause )  ˚♡", color = Muted, fontSize = 11.sp)
                 Text("little pause", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Normal)
             }
             Box(
                 modifier = Modifier.size(44.dp).background(Blush, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("à­¨à­§", color = RoseDeep, fontSize = 22.sp)
+                Text("୨୧", color = RoseDeep, fontSize = 22.sp)
             }
         }
 
@@ -82,10 +82,10 @@ internal fun HomeScreen(
         ) {
             item {
                 SoftCard(container = Sand) {
-                    Text("um cantinho para respirar  âœ§", color = Ink, fontSize = 15.sp)
+                    Text("um cantinho para respirar  ✧", color = Ink, fontSize = 15.sp)
                     Text(
-                        "o little pause segura os apps que vocÃª escolheu, sÃ³ nos horÃ¡rios que vocÃª escolheu. " +
-                            "sem sermÃ£o, sem contagem regressiva na cara.",
+                        "o little pause segura os apps que você escolheu, só nos horários que você escolheu. " +
+                            "sem sermão, sem contagem regressiva na cara.",
                         color = Muted, fontSize = 11.sp
                     )
                     Box(
@@ -94,14 +94,14 @@ internal fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("à­¨à­§       âœ§       à­¨à­§", color = Rose, fontSize = 20.sp)
+                            Text("୨୧       ✧       ୨୧", color = Rose, fontSize = 20.sp)
                             Text("slow down, you're doing fine", color = Muted, fontSize = 10.sp)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Pill("â™¡ pausa", Modifier.weight(1f), active = blockingEnabled)
-                        Pill("â˜ calendÃ¡rio", Modifier.weight(1f), onClick = onOpenCalendar)
-                        Pill("âœ§ horÃ¡rios", Modifier.weight(1f), onClick = onOpenPause)
+                        Pill("♡ pausa", Modifier.weight(1f), active = blockingEnabled)
+                        Pill("☁ calendário", Modifier.weight(1f), onClick = onOpenCalendar)
+                        Pill("✧ horários", Modifier.weight(1f), onClick = onOpenPause)
                     }
                 }
             }
@@ -110,10 +110,14 @@ internal fun HomeScreen(
                 SoftCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(if (blockingEnabled) "a pausa estÃ¡ de pÃ© â™¡" else "a pausa estÃ¡ descansando", color = Ink, fontSize = 16.sp)
                             Text(
-                                if (blockingEnabled) "$activeSchedules horÃ¡rio(s) ativo(s) Â· seus apps entram na pausa na hora combinada"
-                                else "quando quiser, ligue um horÃ¡rio e o app comeÃ§a a cuidar de vocÃª",
+                                if (blockingEnabled) "a pausa está de pé ♡" else "a pausa está descansando",
+                                color = Ink, fontSize = 16.sp
+                            )
+                            Text(
+                                if (blockingEnabled)
+                                    "$activeSchedules horário(s) ativo(s) · seus apps entram na pausa na hora combinada"
+                                else "quando quiser, ligue um horário e o app começa a cuidar de você",
                                 color = Muted, fontSize = 11.sp
                             )
                         }
@@ -124,7 +128,7 @@ internal fun HomeScreen(
                         )
                     }
                     TextButton(onClick = onOpenPause, contentPadding = PaddingValues(0.dp)) {
-                        Text("abrir as pausas â†’", color = RoseDeep, fontSize = 12.sp)
+                        Text("abrir as pausas →", color = RoseDeep, fontSize = 12.sp)
                     }
                 }
             }
@@ -132,7 +136,7 @@ internal fun HomeScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     SectionHeader(
-                        title = "little reminders  â™¡",
+                        title = "little reminders  ♡",
                         detail = "recadinhos para acompanhar seu dia",
                         action = {
                             TextButton(onClick = { showEditor = true }) {
@@ -143,7 +147,7 @@ internal fun HomeScreen(
                     if (reminders.isEmpty()) {
                         SoftCard {
                             Text("nenhum recadinho ainda", color = Ink, fontSize = 13.sp)
-                            Text("adicione uma mensagem, uma data e um horÃ¡rio â™¡", color = Muted, fontSize = 11.sp)
+                            Text("adicione uma mensagem, uma data e um horário ♡", color = Muted, fontSize = 11.sp)
                         }
                     } else {
                         reminders.forEach { reminder ->
@@ -162,12 +166,15 @@ internal fun HomeScreen(
                                     )
                                 }
                                 Row(verticalAlignment = Alignment.Bottom) {
-                                    Text(reminder.time, color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Light, modifier = Modifier.weight(1f))
+                                    Text(
+                                        reminder.time, color = Ink, fontSize = 30.sp,
+                                        fontWeight = FontWeight.Light, modifier = Modifier.weight(1f)
+                                    )
                                     Text(prettyDate(reminder.date), color = Muted, fontSize = 11.sp)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        if (reminder.enabled) "lembrete ativado â™¡" else "pausado",
+                                        if (reminder.enabled) "lembrete ativado ♡" else "pausado",
                                         color = Muted, fontSize = 10.sp, modifier = Modifier.weight(1f)
                                     )
                                     TextButton(onClick = {
@@ -186,7 +193,7 @@ internal fun HomeScreen(
 
             item {
                 Text(
-                    "feito com carinho, para os seus dias â™¡",
+                    "feito com carinho, para os seus dias ♡",
                     color = Muted, fontSize = 11.sp,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -200,7 +207,7 @@ internal fun HomeScreen(
             onDismissRequest = { showEditor = false },
             containerColor = Paper,
             shape = RoundedCornerShape(24.dp),
-            title = { Text("um recadinho para vocÃª â™¡", color = Ink) },
+            title = { Text("um recadinho para você ♡", color = Ink) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
@@ -212,7 +219,7 @@ internal fun HomeScreen(
                     OutlinedTextField(
                         value = reminderTime,
                         onValueChange = { reminderTime = it.filter { c -> c.isDigit() || c == ':' }.take(5) },
-                        label = { Text("horÃ¡rio (HH:mm)") },
+                        label = { Text("horário (HH:mm)") },
                         singleLine = true
                     )
                     Text("hoje: ${todayLabel()}", color = Muted, fontSize = 11.sp)
@@ -224,7 +231,10 @@ internal fun HomeScreen(
                     val valid = reminderTime.matches(Regex("([01]?[0-9]|2[0-3]):[0-5][0-9]"))
                     if (title.isNotEmpty() && valid) {
                         if (android.os.Build.VERSION.SDK_INT >= 33 &&
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
                         ) {
                             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
