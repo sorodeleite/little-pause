@@ -40,6 +40,8 @@ jeito gentil. Então esse aqui é do meu jeitinho.
   um respiro de 15 segundos e dois caminhos: voltar para o seu dia ou continuar por 1 minuto.
 - **resumo das 22h** — um bilhetinho com o seu tempo de tela do dia e uma comparação com filmes de 1h40.
 - **recadinhos** — lembretes com data e hora, para não esquecer o que importa.
+- **atualizações pelo próprio app** — como no *sleep my angel*: mostra a versão instalada e a nova, o
+  que mudou em cada uma, baixa o APK com barra de progresso e instala por cima, sem desinstalar.
 - **um calendário inteiro** — o mesmo calendário que eu fiz para o *little place*, morando aqui dentro:
   tarefinhas coloridas, carinhas do dia, eventos de vários dias, foto do dia e muitos adesivos.
 
@@ -126,28 +128,30 @@ app/src/main/
   java/com/littlepause/
     MainActivity.kt · HomeScreen.kt · CalendarScreen.kt · PauseScreen.kt
     AppBlockingService.kt · KeepAlive.kt · BlockSchedules.kt · AppDailyLimitsCard.kt
-    Reminders.kt · DailyUsageReceiver.kt · AppUpdater.kt
+    Reminders.kt · DailyUsageReceiver.kt · AppUpdater.kt · UpdateSection.kt
   assets/calendar/
     index.html · planner.js · calendar.css · calendar-style.js · calendar-events.js
     fonts/ · stickers/ · sticker-manifest.js
+CHANGELOG.md
 ```
 
 ### para publicar uma versão nova
 
 1. suba o `versionCode` e o `versionName` em `app/build.gradle.kts`;
-2. crie a tag e empurre: `git tag v0.5.0 && git push origin v0.5.0`;
-3. o workflow **Android release** monta o APK assinado e publica em *releases* com o nome
-   `little-pause.apk` — é exatamente esse arquivo que o app procura quando você toca em
-   “procurar atualização”.
+2. escreva a entrada da versão no `CHANGELOG.md` (é esse texto que aparece em **atualizações ♡** no app);
+3. faça commit e push na `main`.
 
-Todo push em `app/**` na `main` também monta um APK de teste no workflow **Android build**, sem publicar nada.
+O workflow **Android build** monta o APK assinado, confere a assinatura e, se a tag daquela versão ainda
+não existir, publica sozinho o release `v0.5.0` com o arquivo `little-pause.apk` — exatamente o nome que
+o app procura quando você toca em “baixar atualização”. Se a versão já tiver release, ele só guarda o
+APK como artefato e não publica nada de novo.
 
 ## privacidade
 
 O little pause não tem conta, não manda nada para lugar nenhum e não tem anúncios. Os nomes dos apps,
 os horários, os limites, as tarefinhas e as fotinhas do calendário ficam guardados no seu aparelho.
-O único acesso à internet é para procurar uma versão nova no GitHub quando você toca em
-“procurar atualização”.
+O único acesso à internet é para procurar uma versão nova no GitHub — de vez em quando sozinho (a cada
+12 horas) e sempre que você toca em “verificar de novo”.
 
 ## um lembrete
 

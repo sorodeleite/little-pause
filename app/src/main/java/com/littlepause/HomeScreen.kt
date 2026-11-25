@@ -189,7 +189,7 @@ internal fun HomeScreen(
                 }
             }
 
-            item { UpdateCard() }
+            item { UpdateSection() }
 
             item {
                 Text(

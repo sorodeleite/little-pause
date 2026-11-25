@@ -8,6 +8,7 @@ on:
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
+      - "CHANGELOG.md"
       - ".github/workflows/android.yml"
   pull_request:
     paths:
@@ -18,7 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-build-${{ github.ref }}
@@ -70,3 +71,39 @@ jobs:
           name: little-pause-apk
           path: little-pause.apk
           if-no-files-found: error
+
+      - name: Read the app version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$VERSION" > /dev/null 2>&1; then
+            echo "already released"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Take the release notes from the changelog
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.version.outputs.published == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          awk -v heading="## $VERSION" 'index($0, heading) == 1 { flag = 1; next } /^## / { flag = 0 } flag' \
+            CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "atualização do little pause $VERSION ♡" > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Publish the signed update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.version.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" little-pause.apk \
+            --title "little pause $VERSION" \
+            --notes-file release-notes.md
