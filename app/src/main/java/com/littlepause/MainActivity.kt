@@ -205,6 +205,9 @@ private fun PlannerHome() {
                 )
             }
             item {
+                AppDailyLimitsCard()
+            }
+            item {
                 Card(colors = CardDefaults.cardColors(containerColor = Paper), shape = RoundedCornerShape(22.dp)) {
                     Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
