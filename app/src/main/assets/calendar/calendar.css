@@ -1492,3 +1492,20 @@ body {
 #planner-root .weekdays-grid {
   max-width: 100%;
 }
+
+/* o calendário ocupa a tela do app, sem sobrar um vazio embaixo */
+#planner-root .calendar-decor-card {
+  min-height: clamp(460px, calc(100dvh - 235px), 720px);
+}
+
+.lp-page-footer {
+  margin: 14px auto 0;
+  max-width: 76%;
+  color: #a08c84;
+  font: 11px/1.6 'Nunito', sans-serif;
+  text-align: center;
+}
+
+.lp-page-footer span {
+  color: #c17e93;
+}
