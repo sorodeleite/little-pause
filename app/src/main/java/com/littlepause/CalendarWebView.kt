@@ -80,7 +80,7 @@ fun CalendarView(
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
                         view?.evaluateJavascript(
-                            "document.querySelectorAll('.cal-day-cell').length.toString()"
+                            "document.querySelectorAll('.cal-cell').length.toString()"
                         ) { count ->
                             Log.d(CALENDAR_TAG, "calendário carregado; células: $count")
                         }

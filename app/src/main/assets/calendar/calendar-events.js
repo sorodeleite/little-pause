@@ -15,6 +15,7 @@
 
   const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
   const DATA = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const HORA = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
   const lista = (valor) => (Array.isArray(valor) ? valor : []);
   const objeto = (valor) => (valor && typeof valor === 'object' && !Array.isArray(valor) ? valor : null);
@@ -58,6 +59,24 @@
     return Number.isNaN(data.getTime()) ? null : data;
   }
 
+  function normalizarHora(valor) {
+    const texto = String(valor == null ? '' : valor).trim();
+    if (!HORA.test(texto)) return '';
+    return texto;
+  }
+
+  function emMinutos(hora) {
+    const texto = normalizarHora(hora);
+    if (!texto) return 0;
+    const partes = texto.split(':');
+    return Number(partes[0]) * 60 + Number(partes[1]);
+  }
+
+  function horaDe(minutos) {
+    const total = ((Math.round(Number(minutos) / 30) * 30) % 1440 + 1440) % 1440;
+    return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+  }
+
   function somarDias(iso, n) {
     const data = dataDeTexto(normalizarData(iso));
     if (!data) return '';
@@ -87,11 +106,16 @@
     if (!inicio) return null;
     let fim = normalizarData(cru.fim ?? cru.end) || inicio;
     if (fim < inicio) fim = inicio;
+    const hora = normalizarHora(cru.hora ?? cru.horaInicio ?? cru.startTime);
+    let fimHora = normalizarHora(cru.fimHora ?? cru.horaFim ?? cru.endTime) || hora;
+    if (hora && fim === inicio && fimHora < hora) fimHora = hora;
     return {
       id: String(cru.id || '').trim().slice(0, 40) || idNovo(),
       titulo,
       inicio,
       fim,
+      hora,
+      fimHora,
       cor: normalizarCor(cru.cor ?? cru.color),
       criado: Number(cru.criado) || Date.now()
     };
@@ -131,12 +155,14 @@
     }
   }
 
-  function criar({ titulo, inicio, fim, cor } = {}) {
+  function criar({ titulo, inicio, fim, cor, hora, fimHora } = {}) {
     return normalizarEvento({
       titulo,
       inicio,
       fim: fim || inicio,
       cor: cor || COR_PADRAO,
+      hora,
+      fimHora,
       id: idNovo()
     });
   }
@@ -265,6 +291,9 @@
     normalizarCor,
     corDeTexto,
     normalizarData,
+    normalizarHora,
+    emMinutos,
+    horaDe,
     dataDeTexto,
     chaveDaData,
     somarDias,

@@ -3,6 +3,7 @@
 
   const Style = window.PooftieCalendarStyle || null;
   const Events = window.PooftieCalendarEvents || null;
+  const Holidays = window.LP_Holidays || null;
 
   const NOTE_KEY = 'lp_cal_notes';
   const REACTION_KEY = 'lp_cal_reactions';
@@ -10,12 +11,15 @@
   const STICKER_KEY = 'lp_cal_stickers';
   const ZOOM_KEY = 'lp_cal_zoom';
   const TASKS_MIGRATED_KEY = 'lp_cal_tasks_migrated';
+  const HOUR = 46;
+  const MAX_LINES = 3;
 
   const MONTHS = [
     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
   ];
   const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
   const REACTIONS = ['🍰', '🌸', '🎀', '🧸', '☕', '🌧️'];
   const FUNDO_NOMES = {
     nenhum: 'lisinho', bolinhas: 'bolinhas', nuvens: 'nuvens', coracoes: 'corações',
@@ -42,8 +46,11 @@
   };
 
   const state = {
+    view: 'month',
+    today: todayKey(),
+    cursor: new Date(),
     month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    selected: '',
+    selected: todayKey(),
     notes: readObject(NOTE_KEY),
     reactions: readObject(REACTION_KEY),
     photos: readObject(PHOTO_KEY),
@@ -63,6 +70,8 @@
     stickerQuery: '',
     stickerLimit: 120,
     stickerOpen: false,
+    pendingScroll: false,
+    scrollMinute: 480,
     resizeRaf: 0,
     savedOnce: false
   };
@@ -106,6 +115,7 @@
   function dateKey(date) {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   }
+
   function parseDate(value) {
     const parts = String(value || '').split('-').map(Number);
     if (parts.length !== 3 || !parts.every(Number.isFinite)) return null;
@@ -114,6 +124,23 @@
 
   function todayKey() {
     return dateKey(new Date());
+  }
+
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function startOfWeek(date) {
+    return addDays(date, -date.getDay());
+  }
+
+  function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  function minutesNow() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
   }
 
   function readObject(key) {
@@ -160,6 +187,7 @@
     Style.aplicar(root, state.style);
     root.style.setProperty('--cal-zoom', String(state.zoom));
   }
+
   function events() {
     return Events ? Events.ler(localStorage) : [];
   }
@@ -168,31 +196,82 @@
     return Events ? Events.guardar(localStorage, list) : false;
   }
 
+  function holidayName(key) {
+    return Holidays ? Holidays.nome(key) : '';
+  }
+
+  function shortDate(key) {
+    const date = parseDate(key);
+    if (!date) return '';
+    return date.getDate() + ' ' + MONTHS[date.getMonth()].slice(0, 3);
+  }
+
+  function rangeLabel(evento) {
+    if (!evento) return '';
+    if (!evento.hora) {
+      return evento.inicio === evento.fim
+        ? 'dia inteiro'
+        : 'dia inteiro · ' + shortDate(evento.inicio) + ' – ' + shortDate(evento.fim);
+    }
+    const horas = evento.fimHora && evento.fimHora !== evento.hora ? evento.hora + ' – ' + evento.fimHora : evento.hora;
+    const dias = evento.inicio === evento.fim
+      ? shortDate(evento.inicio)
+      : shortDate(evento.inicio) + ' – ' + shortDate(evento.fim);
+    return horas + ' · ' + dias;
+  }
+
   function shell() {
-    const weekdays = WEEKDAYS.map(function (day) {
-      return '<span data-dia="' + day + '">' + day + '</span>';
+    const weekdays = WEEKDAYS.map(function (day, index) {
+      return '<span class="' + (index === 0 ? 'is-sun' : index === 6 ? 'is-sat' : '') + '">' + day + '</span>';
     }).join('');
 
     return ''
-      + '<div class="calendar-wrapper">'
-      + '  <div class="calendar-top-controls">'
-      + '    <div class="cal-month-nav">'
-      + '      <button class="cal-nav-btn" type="button" data-cal="prev" aria-label="mês anterior" title="mês anterior">‹</button>'
-      + '      <h1 class="cal-month-title" id="cal-month-title"></h1>'
-      + '      <button class="cal-nav-btn" type="button" data-cal="next" aria-label="próximo mês" title="próximo mês">›</button>'
+      + '<div class="cal-app">'
+      + '  <header class="cal-top">'
+      + '    <button class="cal-arrow" type="button" data-cal="prev" aria-label="anterior">‹</button>'
+      + '    <h1 class="cal-title" id="cal-title"></h1>'
+      + '    <button class="cal-arrow" type="button" data-cal="next" aria-label="próximo">›</button>'
+      + '    <div class="cal-top-actions">'
+      + '      <button class="cal-chip" type="button" data-cal="today">hoje</button>'
+      + '      <button class="cal-icon" type="button" data-cal="stickers" aria-label="adesivos" title="adesivos">🎀</button>'
+      + '      <button class="cal-icon" type="button" data-cal="theme" aria-label="personalizar" title="personalizar">🎨</button>'
       + '    </div>'
-      + '    <div class="cal-zoom-controls">'
-      + '      <button class="cal-zoom-btn cal-theme-btn" type="button" data-cal="theme" title="personalizar o calendário" aria-label="personalizar o calendário">🎨</button>'
-      + '      <button class="cal-zoom-btn cal-sticker-btn" type="button" data-cal="stickers" title="adesivos do calendário" aria-label="adesivos do calendário">🎀</button>'
-      + '      <button class="cal-zoom-btn" type="button" data-cal="zoom-out" title="diminuir calendário" aria-label="diminuir calendário">−</button>'
-      + '      <button class="cal-zoom-btn" type="button" data-cal="zoom-in" title="aumentar calendário" aria-label="aumentar calendário">＋</button>'
+      + '  </header>'
+      + '  <nav class="cal-tabs" aria-label="modo de visualização">'
+      + '    <div class="cal-tabs-group">'
+      + '      <button class="cal-tab" type="button" data-view="month">mês</button>'
+      + '      <button class="cal-tab" type="button" data-view="week">semana</button>'
+      + '      <button class="cal-tab" type="button" data-view="day">dia</button>'
       + '    </div>'
+      + '    <div class="cal-zoom" id="cal-zoom">'
+      + '      <button type="button" data-cal="zoom-out" aria-label="diminuir">−</button>'
+      + '      <button type="button" data-cal="zoom-in" aria-label="aumentar">＋</button>'
+      + '    </div>'
+      + '  </nav>'
+      + '  <div class="cal-stage">'
+      + '    <section class="cal-view" data-view-panel="month">'
+      + '      <div class="cal-month" id="cal-card">'
+      + '        <div class="cal-weekdays">' + weekdays + '</div>'
+      + '        <div class="cal-grid" id="cal-grid"></div>'
+      + '        <div class="cal-stickers" id="cal-stickers-overlay"></div>'
+      + '      </div>'
+      + '    </section>'
+      + '    <section class="cal-view" data-view-panel="week">'
+      + '      <div class="cal-week">'
+      + '        <div class="cal-week-head" id="cal-week-head"></div>'
+      + '        <div class="cal-week-allday" id="cal-week-allday"></div>'
+      + '        <div class="cal-timeline" id="cal-week-timeline"></div>'
+      + '      </div>'
+      + '    </section>'
+      + '    <section class="cal-view" data-view-panel="day">'
+      + '      <div class="cal-day">'
+      + '        <div class="cal-day-head" id="cal-day-head"></div>'
+      + '        <div class="cal-day-allday" id="cal-day-allday"></div>'
+      + '        <div class="cal-timeline" id="cal-day-timeline"></div>'
+      + '      </div>'
+      + '    </section>'
       + '  </div>'
-      + '  <div class="calendar-decor-card" id="cal-card">'
-      + '    <div class="weekdays-grid">' + weekdays + '</div>'
-      + '    <div class="days-grid" id="cal-days-grid"></div>'
-      + '    <div class="stickers-overlay" id="cal-stickers-overlay"></div>'
-      + '  </div>'
+      + '  <button class="cal-fab" type="button" data-cal="add" aria-label="novo evento">+</button>'
       + '</div>'
 
       + '<div class="cal-modal" id="cal-day-modal">'
@@ -201,6 +280,7 @@
       + '    <button class="cal-modal-x" type="button" data-cal="close-day" aria-label="fechar">×</button>'
       + '    <h2 class="cal-day-title" id="cal-day-title">tarefinhas do dia</h2>'
       + '    <p class="cal-day-date" id="cal-day-date"></p>'
+      + '    <p class="cal-day-holiday" id="cal-day-holiday" hidden></p>'
       + '    <p class="cal-day-hint">cada linha vira uma tarefinha colorida no dia ⋆</p>'
       + '    <textarea id="cal-day-notes" class="cal-day-notes" maxlength="1200" placeholder="ex.: regar as plantinhas&#10;tomar meu chá…"></textarea>'
       + '    <div class="cal-day-preview" id="cal-day-preview"></div>'
@@ -209,18 +289,23 @@
       + '      <div class="cal-reactions" id="cal-reactions"></div>'
       + '    </section>'
       + '    <section class="cal-section">'
-      + '      <p class="cal-section-title">evento de vários dias ⋆</p>'
+      + '      <p class="cal-section-title">evento ⋆</p>'
       + '      <form class="cal-event-form" id="cal-event-form">'
       + '        <input id="cal-event-title" class="cal-event-input" type="text" maxlength="60" placeholder="ex.: viagem, prova, aniversário…" aria-label="nome do evento">'
       + '        <div class="cal-event-row">'
-      + '          <label class="cal-event-label" for="cal-event-end">até</label>'
+      + '          <label class="cal-switch"><input type="checkbox" id="cal-event-allday" checked><span>dia inteiro</span></label>'
+      + '          <label class="cal-time-field">de <input type="time" id="cal-event-hora" value="09:00"></label>'
+      + '          <label class="cal-time-field">até <input type="time" id="cal-event-fim-hora" value="10:00"></label>'
+      + '        </div>'
+      + '        <div class="cal-event-row">'
+      + '          <label class="cal-event-label" for="cal-event-end">até o dia</label>'
       + '          <input id="cal-event-end" class="cal-event-date" type="date" aria-label="último dia do evento">'
       + '          <div class="cal-event-colors" id="cal-event-colors" role="group" aria-label="cor do evento"></div>'
       + '          <button class="cal-mini-btn" type="submit">+ adicionar</button>'
       + '        </div>'
       + '      </form>'
       + '      <div class="cal-event-list" id="cal-event-list"></div>'
-      + '      <p class="cal-event-hint">o evento começa no dia aberto e pinta até a data que você escolher ⋆</p>'
+      + '      <p class="cal-event-hint">escolha o dia, a hora e a cor ⋆</p>'
       + '    </section>'
       + '    <section class="cal-section">'
       + '      <p class="cal-section-title">foto do dia ⋆</p>'
@@ -232,7 +317,6 @@
       + '          <label class="cal-switch"><input type="checkbox" id="cal-photo-front"><span>na frente</span></label>'
       + '        </div>'
       + '      </div>'
-      + '      <p class="cal-event-hint">a foto preenche o quadradinho do dia ⋆</p>'
       + '    </section>'
       + '    <div class="cal-day-actions">'
       + '      <button class="cal-btn ghost" type="button" data-cal="close-day">deixar pra lá</button>'
@@ -313,6 +397,7 @@
       return;
     }
     state.selected = todayKey();
+    state.today = todayKey();
     state.style = Style.ler(localStorage);
     state.stickers = readArray(STICKER_KEY).map(migrateSticker).map(normalizeSticker).filter(Boolean);
     state.zCounter = state.stickers.reduce(function (max, item) { return Math.max(max, item.z || 0); }, 20);
@@ -320,47 +405,56 @@
     root.innerHTML = shell();
     applyStyle();
     bind();
-    renderCalendar();
+    render();
     restoreStickers();
-    applyZoom();
     root.dataset.ready = '1';
     try {
       if (typeof window.__littlePauseCalendarReady === 'function') {
-        window.__littlePauseCalendarReady(root.querySelectorAll('.cal-day-cell').length);
+        window.__littlePauseCalendarReady(root.querySelectorAll('.cal-cell').length);
       }
-    } catch (error) { /* aviso opcional */ }
+    } catch (error) { }
     if (typeof ResizeObserver === 'function') {
-      const grid = root.querySelector('#cal-days-grid');
-      if (grid) {
+      const stage = root.querySelector('.cal-stage');
+      if (stage) {
         const observer = new ResizeObserver(function () {
           if (state.resizeRaf) return;
           state.resizeRaf = requestAnimationFrame(function () {
             state.resizeRaf = 0;
-            positionBars();
             clampStickers();
           });
         });
-        observer.observe(grid);
+        observer.observe(stage);
       }
     }
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { window.setTimeout(positionBars, 0); }).catch(function () {});
-      if (typeof document.fonts.addEventListener === 'function') {
-        document.fonts.addEventListener('loadingdone', function () { positionBars(); });
-      }
+      document.fonts.ready.then(function () { window.setTimeout(clampStickers, 0); }).catch(function () {});
     }
     window.addEventListener('resize', onViewportChange);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportChange);
     window.addEventListener('orientationchange', onViewportChange);
+    window.setInterval(refreshNow, 60000);
   }
 
   function onViewportChange() {
     if (state.resizeRaf) cancelAnimationFrame(state.resizeRaf);
     state.resizeRaf = requestAnimationFrame(function () {
       state.resizeRaf = 0;
-      positionBars();
       clampStickers();
     });
+  }
+
+  function refreshNow() {
+    const nextToday = todayKey();
+    if (nextToday !== state.today) {
+      state.today = nextToday;
+      render();
+      return;
+    }
+    if (state.view === 'month' || !root) return;
+    const box = root.querySelector(state.view === 'week' ? '#cal-week-timeline .cal-cols' : '#cal-day-timeline .cal-cols');
+    if (!box) return;
+    const line = box.querySelector('.cal-now');
+    if (line) line.style.top = String((minutesNow() / 60) * HOUR) + 'px';
   }
 
   function bind() {
@@ -390,11 +484,9 @@
     const action = event.target.closest('[data-cal]');
     if (action && action.dataset.cal) {
       const name = action.dataset.cal;
-      if (name === 'prev' || name === 'next') {
-        state.month = new Date(state.month.getFullYear(), state.month.getMonth() + (name === 'next' ? 1 : -1), 1);
-        renderCalendar();
-        return;
-      }
+      if (name === 'prev') return shift(-1);
+      if (name === 'next') return shift(1);
+      if (name === 'today') return goToday();
       if (name === 'zoom-in') return setZoom(state.zoom + 0.1);
       if (name === 'zoom-out') return setZoom(state.zoom - 0.1);
       if (name === 'theme') return openTheme();
@@ -408,13 +500,38 @@
       if (name === 'save-day') return saveDay();
       if (name === 'clear-day') return clearDay();
       if (name === 'clear-photo') return clearDayPhoto();
+      if (name === 'add') return openDay(dateKey(state.cursor));
     }
 
-    const day = event.target.closest('.cal-day-cell');
-    if (day && day.dataset.date) return openDay(day.dataset.date);
+    const tab = event.target.closest('.cal-tab[data-view]');
+    if (tab) return setView(tab.dataset.view);
 
-    const bar = event.target.closest('.cal-faixa');
-    if (bar && bar.dataset.date) return openDay(bar.dataset.date);
+    const jump = event.target.closest('[data-jump]');
+    if (jump) {
+      state.cursor = parseDate(jump.dataset.jump) || state.cursor;
+      state.selected = jump.dataset.jump;
+      state.view = 'day';
+      state.pendingScroll = true;
+      state.scrollMinute = Math.max(0, minutesNow() - 90);
+      return render();
+    }
+
+    const cell = event.target.closest('.cal-cell');
+    if (cell) return openDay(cell.dataset.date);
+
+    const block = event.target.closest('.cal-event');
+    if (block) return openDay(block.dataset.date);
+
+    const bar = event.target.closest('.cal-bar');
+    if (bar) return openDay(bar.dataset.date);
+
+    const col = event.target.closest('.cal-col');
+    if (col) {
+      const rect = col.getBoundingClientRect();
+      const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+      const minutes = clamp(Math.round((y / HOUR) * 2) * 30, 0, 1410);
+      return openDay(col.dataset.date, Events.horaDe(minutes));
+    }
 
     const fundo = event.target.closest('[data-fundo]');
     if (fundo) {
@@ -465,14 +582,13 @@
       const id = deleteEvent.dataset.deleteEvent;
       saveEvents(Events.semEvento(events(), id));
       renderEventList();
-      renderCalendar();
+      render();
       return;
     }
     const deleteSticker = event.target.closest('.sticker-handle-del');
     if (deleteSticker) {
       const el = deleteSticker.closest('.placed-sticker');
       removeSticker(el ? el.dataset.id : '');
-      return;
     }
   }
 
@@ -481,16 +597,27 @@
     event.preventDefault();
     if (!state.draft) return;
     const title = root.querySelector('#cal-event-title').value.trim();
-    if (!title) return;
+    if (!title) {
+      toast('dê um nome pro evento ♡');
+      return;
+    }
     let end = root.querySelector('#cal-event-end').value || state.draft.date;
     if (end < state.draft.date) end = state.draft.date;
-    const evento = Events.criar({ titulo: title, inicio: state.draft.date, fim: end, cor: state.eventColor });
+    const allDay = root.querySelector('#cal-event-allday').checked;
+    let hora = '';
+    let fimHora = '';
+    if (!allDay) {
+      hora = root.querySelector('#cal-event-hora').value || '09:00';
+      fimHora = root.querySelector('#cal-event-fim-hora').value || hora;
+      if (end === state.draft.date && fimHora < hora) fimHora = Events.horaDe(Events.emMinutos(hora) + 60);
+    }
+    const evento = Events.criar({ titulo: title, inicio: state.draft.date, fim: end, cor: state.eventColor, hora: hora, fimHora: fimHora });
     if (!evento) return;
     saveEvents(Events.comEvento(events(), evento));
     root.querySelector('#cal-event-title').value = '';
     root.querySelector('#cal-event-end').value = state.draft.date;
     renderEventList();
-    renderCalendar();
+    render();
     toast('evento guardado ♡');
   }
 
@@ -514,6 +641,13 @@
       if (state.draft && state.draft.photo) state.draft.photo.frente = target.checked;
       return;
     }
+    if (target.id === 'cal-event-allday') return syncEventForm();
+    if (target.id === 'cal-event-hora') {
+      const start = Events.emMinutos(target.value);
+      const end = root.querySelector('#cal-event-fim-hora');
+      if (end && Events.emMinutos(end.value) <= start) end.value = Events.horaDe(start + 60);
+      return;
+    }
     if (target.id === 'cal-fundo-cor') return changeTheme({ fundoCor: target.value }, false);
     if (target.id === 'cal-detalhe-cor') return changeTheme({ detalheCor: target.value }, false);
     if (target.id === 'cal-celula-cor') return changeTheme({ celulaCor: target.value }, false);
@@ -525,228 +659,242 @@
     if (target.id === 'cal-domingo-vermelho') return changeTheme({ domingoVermelho: target.checked });
   }
 
-  function renderCalendar() {
-    const grid = root.querySelector('#cal-days-grid');
-    const label = root.querySelector('#cal-month-title');
-    if (!grid || !label) return;
+  function render() {
+    if (!root || !state.style) return;
+    state.today = todayKey();
     applyStyle();
-    label.textContent = MONTHS[state.month.getMonth()] + ' ' + state.month.getFullYear();
+    root.dataset.view = state.view;
+    updateTitle();
+    root.querySelectorAll('[data-view]').forEach(function (button) {
+      button.classList.toggle('is-active', button.dataset.view === state.view);
+    });
+    const zoom = root.querySelector('#cal-zoom');
+    if (zoom) zoom.hidden = state.view !== 'month';
+    if (state.view === 'month') renderMonth();
+    else if (state.view === 'week') renderWeek();
+    else renderDay();
+    if (state.pendingScroll) {
+      state.pendingScroll = false;
+      requestAnimationFrame(scrollTimeline);
+    }
+  }
 
+  function updateTitle() {
+    const title = root.querySelector('#cal-title');
+    if (!title) return;
+    if (state.view === 'month') {
+      title.textContent = MONTHS[state.month.getMonth()] + ' ' + state.month.getFullYear();
+      return;
+    }
+    if (state.view === 'week') {
+      const start = startOfWeek(state.cursor);
+      const end = addDays(start, 6);
+      const ano = end.getFullYear() !== new Date().getFullYear() ? ' ' + end.getFullYear() : '';
+      if (start.getMonth() === end.getMonth()) {
+        title.textContent = start.getDate() + ' – ' + end.getDate() + ' de ' + MONTHS[end.getMonth()] + ano;
+      } else {
+        title.textContent = start.getDate() + ' ' + MONTHS[start.getMonth()].slice(0, 3)
+          + ' – ' + end.getDate() + ' ' + MONTHS[end.getMonth()].slice(0, 3) + ano;
+      }
+      return;
+    }
+    title.textContent = state.cursor.getDate() + ' de ' + MONTHS[state.cursor.getMonth()];
+  }
+
+  function setView(view) {
+    if (['month', 'week', 'day'].indexOf(view) === -1) return;
+    state.view = view;
+    if (view === 'month') state.month = startOfMonth(state.cursor);
+    if (view !== 'month') {
+      state.pendingScroll = true;
+      state.scrollMinute = Math.max(0, minutesNow() - 90);
+    }
+    render();
+    if (view === 'month') clampStickers();
+  }
+
+  function shift(step) {
+    if (state.view === 'month') {
+      const next = new Date(state.month.getFullYear(), state.month.getMonth() + step, 1);
+      state.month = next;
+      state.cursor = next;
+    } else if (state.view === 'week') {
+      state.cursor = addDays(state.cursor, step * 7);
+      state.month = startOfMonth(state.cursor);
+      state.pendingScroll = true;
+      state.scrollMinute = Math.max(0, minutesNow() - 90);
+    } else {
+      state.cursor = addDays(state.cursor, step);
+      state.month = startOfMonth(state.cursor);
+      state.pendingScroll = true;
+      state.scrollMinute = Math.max(0, minutesNow() - 90);
+    }
+    render();
+  }
+
+  function goToday() {
+    state.cursor = new Date();
+    state.month = startOfMonth(state.cursor);
+    state.selected = todayKey();
+    state.pendingScroll = true;
+    state.scrollMinute = Math.max(0, minutesNow() - 90);
+    render();
+  }
+
+  function dayEntries(key, max) {
+    const list = [];
+    const doDia = Events.eventosDoDia(events(), key);
+    doDia.filter(function (evento) { return evento.hora; })
+      .sort(function (a, b) { return a.hora.localeCompare(b.hora) || a.titulo.localeCompare(b.titulo); })
+      .forEach(function (evento) {
+        list.push({ titulo: evento.titulo, cor: evento.cor, hora: evento.hora, tipo: 'evento' });
+      });
+    doDia.filter(function (evento) { return !evento.hora; })
+      .sort(function (a, b) { return a.titulo.localeCompare(b.titulo); })
+      .forEach(function (evento) {
+        list.push({ titulo: evento.titulo, cor: evento.cor, hora: '', tipo: 'evento' });
+      });
+    noteLines(state.notes[key]).forEach(function (title, index) {
+      list.push({ titulo: title, cor: Style.corDaTarefa(state.style, index), hora: '', tipo: 'tarefa' });
+    });
+    return { visible: list.slice(0, max), rest: Math.max(0, list.length - max), total: list.length };
+  }
+
+  function renderMonth() {
+    const grid = root.querySelector('#cal-grid');
+    if (!grid) return;
     const year = state.month.getFullYear();
     const month = state.month.getMonth();
-    const offset = new Date(year, month, 1).getDay();
-    const total = new Date(year, month + 1, 0).getDate();
-    const previousTotal = new Date(year, month, 0).getDate();
-    const today = todayKey();
-    const dates = [];
-    const cells = [];
-    const hasEntry = new Set(Object.keys(state.notes).concat(Object.keys(state.reactions), Object.keys(state.photos)));
+    const first = new Date(year, month, 1);
+    const start = addDays(first, -first.getDay());
+    const fragment = document.createDocumentFragment();
 
-    grid.innerHTML = '';
-
-    function addCell(day, date) {
+    for (let index = 0; index < 42; index += 1) {
+      const date = addDays(start, index);
       const key = dateKey(date);
+      const weekday = index % 7;
+      const holiday = holidayName(key);
       const cell = document.createElement('button');
       cell.type = 'button';
-      cell.className = 'cal-day-cell';
-      if (date.getMonth() !== month) cell.classList.add('other-month');
-      if (date.getDay() === 0) cell.classList.add('is-domingo');
-      if (key === today) cell.classList.add('today');
-      if (hasEntry.has(key)) cell.classList.add('has-entry');
+      cell.className = 'cal-cell'
+        + (date.getMonth() !== month ? ' is-out' : '')
+        + (key === state.today ? ' is-today' : '')
+        + (weekday === 0 ? ' is-sun' : '')
+        + (weekday === 6 ? ' is-sat' : '')
+        + (key === state.selected ? ' is-selected' : '')
+        + (holiday ? ' is-holiday' : '');
       cell.dataset.date = key;
 
       const photo = state.photos[key];
       if (photo && photo.src) {
-        cell.classList.add('tem-foto');
-        if (photo.frente) cell.classList.add('foto-na-frente');
+        cell.classList.add('has-photo');
+        if (photo.frente) cell.classList.add('photo-front');
         const image = document.createElement('img');
-        image.className = 'cal-day-photo';
+        image.className = 'cal-cell-photo';
         image.src = photo.src;
         image.alt = '';
-        image.loading = 'lazy';
         image.decoding = 'async';
         cell.appendChild(image);
       }
 
       const top = document.createElement('span');
-      top.className = 'cal-day-top';
+      top.className = 'cal-num-row';
       const number = document.createElement('span');
-      number.className = 'cal-day-num';
-      number.textContent = String(day);
+      number.className = 'cal-num';
+      number.textContent = String(date.getDate());
       top.appendChild(number);
       const mini = Style.miniDoDia(key, state.style.mini);
       if (mini) {
         const tiny = document.createElement('span');
-        tiny.className = 'cal-day-mini';
+        tiny.className = 'cal-mini';
         tiny.textContent = mini;
         top.appendChild(tiny);
       }
       cell.appendChild(top);
 
+      if (holiday) {
+        const label = document.createElement('span');
+        label.className = 'cal-holiday';
+        label.textContent = holiday;
+        cell.appendChild(label);
+      }
+
+      const entries = dayEntries(key, holiday ? 2 : MAX_LINES);
+      if (entries.visible.length) {
+        const lines = document.createElement('span');
+        lines.className = 'cal-lines';
+        entries.visible.forEach(function (entry) {
+          const line = document.createElement('span');
+          line.className = 'cal-line';
+          const dot = document.createElement('i');
+          dot.style.background = entry.cor;
+          line.appendChild(dot);
+          const text = document.createElement('span');
+          text.textContent = entry.titulo;
+          line.appendChild(text);
+          line.title = entry.hora ? entry.hora + ' · ' + entry.titulo : entry.titulo;
+          lines.appendChild(line);
+        });
+        if (entries.rest) {
+          const more = document.createElement('span');
+          more.className = 'cal-line cal-more';
+          more.textContent = '+' + entries.rest;
+          lines.appendChild(more);
+        }
+        cell.appendChild(lines);
+      }
+
       const reaction = state.reactions[key];
       if (reaction) {
         const badge = document.createElement('span');
-        badge.className = 'cal-day-reaction';
+        badge.className = 'cal-emoji';
         badge.textContent = reaction;
         cell.appendChild(badge);
       }
 
-      const tasks = noteLines(state.notes[key]);
-      const aria = day + ' de ' + MONTHS[date.getMonth()] + (tasks.length ? ': ' + tasks.join(', ') : '');
+      const aria = date.getDate() + ' de ' + MONTHS[date.getMonth()]
+        + (holiday ? ', ' + holiday : '')
+        + (entries.total ? ', ' + entries.total + ' itens' : '');
       cell.setAttribute('aria-label', aria);
-      grid.appendChild(cell);
-      dates.push(key);
-      cells.push(cell);
+      fragment.appendChild(cell);
     }
 
-    for (let i = offset - 1; i >= 0; i -= 1) {
-      addCell(previousTotal - i, new Date(year, month - 1, previousTotal - i));
-    }
-    for (let day = 1; day <= total; day += 1) {
-      addCell(day, new Date(year, month, day));
-    }
-    const trailing = (7 - ((offset + total) % 7)) % 7;
-    for (let i = 1; i <= trailing; i += 1) {
-      addCell(i, new Date(year, month + 1, i));
-    }
-
-    const faixas = [];
-    events().forEach(function (evento, index) {
-      faixas.push({
-        id: 'evento:' + evento.id,
-        idEvento: evento.id,
-        titulo: evento.titulo,
-        cor: evento.cor,
-        textoCor: Events.corDeTexto(evento.cor),
-        inicio: evento.inicio,
-        fim: evento.fim,
-        tipo: 'evento',
-        ordem: index
-      });
-    });
-    Object.keys(state.notes).forEach(function (key) {
-      noteLines(state.notes[key]).forEach(function (title, index) {
-        faixas.push({
-          id: 'tarefa:' + key + ':' + index,
-          titulo: title,
-          cor: Style.corDaTarefa(state.style, index),
-          inicio: key,
-          fim: key,
-          tipo: 'tarefa',
-          ordem: index
-        });
-      });
-    });
-
-    const grade = Events.montarGrade({ dias: dates, faixas: faixas });
-    let maxLanes = 0;
-    if (grade && grade.semanas) {
-      grade.semanas.forEach(function (week) { maxLanes = Math.max(maxLanes, week.totalFaixas || 0); });
-    }
-    cells.forEach(function (cell) { cell.style.setProperty('--cal-linhas', String(maxLanes)); });
-
-    renderBars(grade, dates, cells);
+    grid.innerHTML = '';
+    grid.appendChild(fragment);
   }
 
-  function renderBars(grade, dates, cells) {
-    const grid = root.querySelector('#cal-days-grid');
-    if (!grid) return;
-    const old = grid.querySelector('.cal-days-overlay');
-    if (old) old.remove();
-    const overlay = document.createElement('div');
-    overlay.className = 'cal-days-overlay';
-    grid.style.setProperty('--cal-faixa-passo', String(getBarStep()) + 'px');
-
-    if (grade && grade.semanas) {
-      const passo = getBarStep();
-      grade.semanas.forEach(function (week, weekIndex) {
-        const groups = [];
-        const byId = new Map();
-        for (let column = 0; column < 7; column += 1) {
-          const segments = week.celulas[column] || [];
-          segments.forEach(function (segment) {
-            const previous = byId.get(segment.id);
-            if (previous && previous.columnEnd === column - 1) previous.columnEnd = column;
-            else {
-              const group = { segment: segment, columnStart: column, columnEnd: column };
-              groups.push(group);
-              byId.set(segment.id, group);
-            }
-          });
-        }
-        groups.forEach(function (group) {
-          const startCell = cells[weekIndex * 7 + group.columnStart];
-          const endCell = cells[weekIndex * 7 + group.columnEnd];
-          if (!startCell || !endCell) return;
-          const segment = group.segment;
-          const top = startCell.querySelector('.cal-day-top');
-          const base = (top ? top.offsetTop + top.offsetHeight : 0) + 3;
-          const date = dates[weekIndex * 7 + group.columnStart];
-          const bar = document.createElement('button');
-          bar.type = 'button';
-          bar.className = 'cal-faixa'
-            + (segment.comecaAqui ? ' comeca-aqui' : '')
-            + (segment.terminaAqui ? ' termina-aqui' : '')
-            + (segment.tipo === 'evento' ? ' is-evento' : ' is-tarefa');
-          bar.dataset.date = segment.tipo === 'evento' ? segment.inicio : date;
-          bar.style.setProperty('--faixa-cor', segment.cor);
-          bar.style.setProperty('--faixa-texto', segment.textoCor || '#4a3a34');
-          bar.style.top = String(startCell.offsetTop + base + (segment.lane - 1) * passo) + 'px';
-          const left = Math.max(0, startCell.offsetLeft + (segment.comecaAqui ? 4 : -1));
-          const right = endCell.offsetLeft + endCell.offsetWidth - (segment.terminaAqui ? 4 : -1);
-          bar.style.left = String(left) + 'px';
-          bar.style.width = String(Math.max(6, right - left)) + 'px';
-          bar.style.height = String(Math.max(9, passo - 3)) + 'px';
-          bar.textContent = segment.mostrarTitulo ? segment.titulo : '';
-          bar.title = segment.tipo === 'evento'
-            ? segment.titulo + ' · ' + rangeLabel(segment.inicio, segment.fim)
-            : segment.titulo;
-          bar.setAttribute('aria-label', bar.title);
-          overlay.appendChild(bar);
-        });
-      });
-    }
-    grid.appendChild(overlay);
-  }
-
-  function getBarStep() {
-    const grid = root.querySelector('#cal-days-grid');
-    const width = grid ? grid.clientWidth : 0;
-    return Math.max(13, Math.min(24, (width || 380) * 0.032));
-  }
-
-  function rangeLabel(start, end) {
-    if (!start) return '';
-    if (!end || end === start) return shortDate(start);
-    return shortDate(start) + ' – ' + shortDate(end);
-  }
-
-  function shortDate(key) {
-    const date = parseDate(key);
-    if (!date) return '';
-    return date.getDate() + ' ' + MONTHS[date.getMonth()].slice(0, 3);
-  }
-
-  function positionBars() {
-    const grid = root.querySelector('#cal-days-grid');
-    if (!grid || !state.style) return;
+  function renderWeek() {
+    const start = startOfWeek(state.cursor);
     const dates = [];
-    grid.querySelectorAll('.cal-day-cell').forEach(function (cell) { dates.push(cell.dataset.date); });
-    const cells = Array.prototype.slice.call(grid.querySelectorAll('.cal-day-cell'));
-    if (!cells.length) return;
+    for (let index = 0; index < 7; index += 1) dates.push(dateKey(addDays(start, index)));
+    const head = root.querySelector('#cal-week-head');
+    if (head) {
+      head.innerHTML = '<span class="cal-gutter"></span>' + dates.map(function (key, index) {
+        const date = parseDate(key);
+        const holiday = holidayName(key);
+        return '<button type="button" class="cal-week-day'
+          + (key === state.today ? ' is-today' : '')
+          + (index === 0 ? ' is-sun' : '')
+          + (index === 6 ? ' is-sat' : '')
+          + (holiday ? ' is-holiday' : '')
+          + '" data-jump="' + key + '">'
+          + '<small>' + WEEKDAYS[index] + '</small><b>' + date.getDate() + '</b></button>';
+      }).join('');
+    }
+    renderWeekAllDay(dates);
+    renderTimeline(root.querySelector('#cal-week-timeline'), dates, true);
+  }
 
+  function allDayBoxes(dates) {
     const faixas = [];
-    events().forEach(function (evento, index) {
+    events().forEach(function (evento) {
+      if (evento.hora) return;
       faixas.push({
         id: 'evento:' + evento.id,
-        idEvento: evento.id,
         titulo: evento.titulo,
         cor: evento.cor,
-        textoCor: Events.corDeTexto(evento.cor),
         inicio: evento.inicio,
-        fim: evento.fim,
-        tipo: 'evento',
-        ordem: index
+        fim: evento.fim
       });
     });
     Object.keys(state.notes).forEach(function (key) {
@@ -756,25 +904,196 @@
           titulo: title,
           cor: Style.corDaTarefa(state.style, index),
           inicio: key,
-          fim: key,
-          tipo: 'tarefa',
-          ordem: index
+          fim: key
         });
       });
     });
-    const grade = Events.montarGrade({ dias: dates, faixas: faixas });
-    renderBars(grade, dates, cells);
+    const boxes = [];
+    faixas.forEach(function (faixa) {
+      let colStart = 0;
+      while (colStart < dates.length && dates[colStart] < faixa.inicio) colStart += 1;
+      let colEnd = dates.length - 1;
+      while (colEnd >= 0 && dates[colEnd] > faixa.fim) colEnd -= 1;
+      if (colStart > colEnd || colStart >= dates.length) return;
+      boxes.push({
+        titulo: faixa.titulo,
+        cor: faixa.cor,
+        texto: Events.corDeTexto(faixa.cor),
+        colStart: colStart,
+        colEnd: colEnd,
+        deAntes: faixa.inicio < dates[0],
+        vaiDepois: faixa.fim > dates[6]
+      });
+    });
+    boxes.sort(function (a, b) {
+      return a.colStart - b.colStart
+        || (b.colEnd - b.colStart) - (a.colEnd - a.colStart)
+        || a.titulo.localeCompare(b.titulo);
+    });
+    const lanes = [];
+    boxes.forEach(function (box) {
+      let lane = 0;
+      while (true) {
+        if (!lanes[lane]) lanes[lane] = [];
+        let busy = false;
+        for (let col = box.colStart; col <= box.colEnd; col += 1) {
+          if (lanes[lane][col]) { busy = true; break; }
+        }
+        if (!busy) break;
+        lane += 1;
+      }
+      for (let col = box.colStart; col <= box.colEnd; col += 1) lanes[lane][col] = true;
+      box.lane = lane;
+    });
+    return boxes;
   }
 
-  function openDay(key) {
+  function renderWeekAllDay(dates) {
+    const box = root.querySelector('#cal-week-allday');
+    if (!box) return;
+    const boxes = allDayBoxes(dates);
+    const rows = boxes.reduce(function (max, item) { return Math.max(max, item.lane + 1); }, 0);
+    const bars = boxes.map(function (item) {
+      const label = (item.deAntes ? '◀ ' : '') + item.titulo + (item.vaiDepois ? ' ▶' : '');
+      return '<button type="button" class="cal-bar" data-date="' + dates[item.colStart] + '"'
+        + ' style="grid-column:' + (item.colStart + 1) + ' / ' + (item.colEnd + 2) + ';grid-row:' + (item.lane + 1)
+        + ';--c:' + item.cor + ';--t:' + item.texto + '">' + escape(label) + '</button>';
+    }).join('');
+    box.innerHTML = '<span class="cal-allday-label">todo</span>'
+      + '<div class="cal-allday-bars" style="grid-template-rows:repeat(' + Math.max(1, rows) + ',16px)">' + bars + '</div>';
+  }
+
+  function renderDay() {
+    const key = dateKey(state.cursor);
+    const date = state.cursor;
+    const head = root.querySelector('#cal-day-head');
+    if (head) {
+      const holiday = holidayName(key);
+      head.innerHTML = '<div class="cal-day-date"><b>' + WEEKDAYS_LONG[date.getDay()] + '</b>'
+        + '<span>' + date.getDate() + ' de ' + MONTHS[date.getMonth()] + '</span></div>'
+        + (holiday ? '<p class="cal-day-feriado">' + escape(holiday) + '</p>' : '');
+    }
+    renderDayAllDay(key);
+    renderTimeline(root.querySelector('#cal-day-timeline'), [key], false);
+  }
+
+  function renderDayAllDay(key) {
+    const box = root.querySelector('#cal-day-allday');
+    if (!box) return;
+    const chips = [];
+    Events.eventosDoDia(events(), key).forEach(function (evento) {
+      if (evento.hora) return;
+      chips.push({ titulo: evento.titulo, cor: evento.cor, texto: Events.corDeTexto(evento.cor) });
+    });
+    noteLines(state.notes[key]).forEach(function (title, index) {
+      chips.push({ titulo: title, cor: Style.corDaTarefa(state.style, index), texto: '#4a3a34' });
+    });
+    box.innerHTML = '<span class="cal-allday-label">todo</span>'
+      + '<div class="cal-day-allday-list">'
+      + (chips.length ? chips.map(function (chip) {
+        return '<button type="button" class="cal-chip-bar" data-date="' + key + '" style="--c:' + chip.cor + ';--t:' + chip.texto + '">' + escape(chip.titulo) + '</button>';
+      }).join('') : '<span class="cal-day-empty">nada marcado o dia todo</span>')
+      + '</div>';
+  }
+
+  function dayTimed(key) {
+    const items = Events.eventosDoDia(events(), key).filter(function (evento) {
+      return Boolean(evento.hora);
+    }).map(function (evento) {
+      let start = evento.inicio === key ? Events.emMinutos(evento.hora) : 0;
+      let end = evento.fim === key ? Events.emMinutos(evento.fimHora || evento.hora) : 1440;
+      if (end <= start) end = Math.min(1440, start + 30);
+      return {
+        id: evento.id,
+        titulo: evento.titulo,
+        cor: evento.cor,
+        texto: Events.corDeTexto(evento.cor),
+        hora: evento.hora,
+        start: start,
+        end: end
+      };
+    }).sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+
+    let cluster = [];
+    let clusterEnd = 0;
+
+    function flush() {
+      if (!cluster.length) return;
+      const lanes = [];
+      cluster.forEach(function (item) {
+        let lane = 0;
+        while (lanes[lane] != null && lanes[lane] > item.start) lane += 1;
+        lanes[lane] = item.end;
+        item.lane = lane;
+      });
+      const total = lanes.length;
+      cluster.forEach(function (item) { item.lanes = total; });
+      cluster = [];
+    }
+
+    items.forEach(function (item) {
+      if (cluster.length && item.start >= clusterEnd) flush();
+      cluster.push(item);
+      clusterEnd = cluster.length === 1 ? item.end : Math.max(clusterEnd, item.end);
+    });
+    flush();
+    return items;
+  }
+
+  function renderTimeline(box, dates, week) {
+    if (!box) return;
+    const labels = [];
+    for (let hour = 0; hour < 24; hour += 1) {
+      labels.push('<span style="top:' + (hour * HOUR) + 'px">' + String(hour).padStart(2, '0') + ':00</span>');
+    }
+    const cols = dates.map(dayColumn).join('');
+    const rows = 24 * HOUR;
+    const nowIndex = dates.indexOf(state.today);
+    const now = nowIndex !== -1
+      ? '<span class="cal-now" style="top:' + ((minutesNow() / 60) * HOUR) + 'px"></span>'
+      : '';
+    box.innerHTML = '<div class="cal-timeline-inner">'
+      + '<div class="cal-hours" style="height:' + rows + 'px">' + labels.join('') + '</div>'
+      + '<div class="cal-cols' + (week ? '' : ' is-day') + '" style="height:' + rows + 'px">' + cols + now + '</div>'
+      + '</div>';
+  }
+
+  function dayColumn(key) {
+    const items = dayTimed(key);
+    const blocks = items.map(function (item) {
+      const total = item.lanes || 1;
+      const width = 100 / total;
+      const top = (item.start / 60) * HOUR;
+      const height = Math.max(17, ((item.end - item.start) / 60) * HOUR - 1);
+      return '<button type="button" class="cal-event" data-date="' + key + '"'
+        + ' style="--c:' + item.cor + ';--t:' + item.texto
+        + ';top:' + top + 'px;height:' + height + 'px'
+        + ';left:calc(' + (item.lane * width) + '% + 1px);width:calc(' + width + '% - 2px)">'
+        + '<b>' + item.hora + '</b><span>' + escape(item.titulo) + '</span></button>';
+    }).join('');
+    return '<div class="cal-col" data-date="' + key + '">' + blocks + '</div>';
+  }
+
+  function scrollTimeline() {
+    if (state.view !== 'week' && state.view !== 'day') return;
+    const box = root.querySelector(state.view === 'week' ? '#cal-week-timeline' : '#cal-day-timeline');
+    if (!box) return;
+    box.scrollTop = (state.scrollMinute / 60) * HOUR;
+  }
+
+  function openDay(key, hora) {
     if (!state.style) return;
     const date = parseDate(key);
     if (!date) return;
+    state.selected = key;
+    state.cursor = date;
+    state.month = startOfMonth(date);
     try {
       if (window.LittlePauseCalendar && window.LittlePauseCalendar.onDateSelected) {
         window.LittlePauseCalendar.onDateSelected(key);
       }
-    } catch (error) { /* ponte opcional */ }
+    } catch (error) { }
+    markSelected();
     const photo = state.photos[key];
     state.draft = {
       date: key,
@@ -786,11 +1105,13 @@
     modal.querySelector('#cal-day-date').textContent = date.toLocaleDateString('pt-BR', {
       weekday: 'long', day: 'numeric', month: 'long'
     });
+    const holiday = holidayName(key);
+    const holidayBox = modal.querySelector('#cal-day-holiday');
+    holidayBox.textContent = holiday;
+    holidayBox.hidden = !holiday;
     modal.querySelector('#cal-day-notes').value = state.draft.notes;
-    modal.querySelector('#cal-event-title').value = '';
-    modal.querySelector('#cal-event-end').value = key;
-    modal.querySelector('#cal-event-end').min = key;
     root.querySelector('#cal-photo-file').value = '';
+    resetEventForm(hora || '');
     modal.classList.add('is-open');
     renderDayPreview();
     renderReactions();
@@ -800,6 +1121,40 @@
     if (window.innerWidth > 700) {
       window.setTimeout(function () { modal.querySelector('#cal-day-notes').focus(); }, 60);
     }
+  }
+
+  function markSelected() {
+    root.querySelectorAll('.cal-cell.is-selected').forEach(function (cell) {
+      cell.classList.remove('is-selected');
+    });
+    const cell = root.querySelector('.cal-cell[data-date="' + state.selected + '"]');
+    if (cell) cell.classList.add('is-selected');
+  }
+
+  function resetEventForm(hora) {
+    const allDay = root.querySelector('#cal-event-allday');
+    const start = root.querySelector('#cal-event-hora');
+    const end = root.querySelector('#cal-event-fim-hora');
+    const endDate = root.querySelector('#cal-event-end');
+    const title = root.querySelector('#cal-event-title');
+    if (!allDay || !start || !end || !endDate) return;
+    allDay.checked = !hora;
+    start.value = hora || '09:00';
+    end.value = Events.horaDe(Events.emMinutos(start.value) + 60);
+    endDate.value = state.draft ? state.draft.date : todayKey();
+    endDate.min = endDate.value;
+    if (title) title.value = '';
+    syncEventForm();
+  }
+
+  function syncEventForm() {
+    const allDay = root.querySelector('#cal-event-allday');
+    const off = !allDay || allDay.checked;
+    root.querySelectorAll('.cal-time-field').forEach(function (field) {
+      field.classList.toggle('is-off', off);
+      const input = field.querySelector('input');
+      if (input) input.disabled = off;
+    });
   }
 
   function closeDay() {
@@ -841,12 +1196,12 @@
     const box = root.querySelector('#cal-event-list');
     if (!box || !state.draft) return;
     const list = Events.eventosDoDia(events(), state.draft.date).sort(function (a, b) {
-      return a.inicio.localeCompare(b.inicio);
+      return (a.hora || '99:99').localeCompare(b.hora || '99:99') || a.titulo.localeCompare(b.titulo);
     });
     box.innerHTML = list.length ? list.map(function (evento) {
       return '<div class="cal-event-item">'
         + '<i style="--cal-color:' + evento.cor + '"></i>'
-        + '<div><strong>' + escape(evento.titulo) + '</strong><small>' + escape(rangeLabel(evento.inicio, evento.fim)) + '</small></div>'
+        + '<div><strong>' + escape(evento.titulo) + '</strong><small>' + escape(rangeLabel(evento)) + '</small></div>'
         + '<button type="button" data-delete-event="' + escape(evento.id) + '" aria-label="apagar evento">×</button>'
         + '</div>';
     }).join('') : '<p class="cal-event-empty">nenhum evento por aqui ♡</p>';
@@ -897,7 +1252,7 @@
     const savedPhotos = saveObject(PHOTO_KEY, state.photos);
     const saved = savedNotes && savedReactions && savedPhotos;
     closeDay();
-    renderCalendar();
+    render();
     toast(saved ? 'dia guardado ♡' : 'não consegui guardar tudo. o armazenamento pode estar cheio.', saved ? undefined : 'error');
   }
 
@@ -911,22 +1266,14 @@
     saveObject(REACTION_KEY, state.reactions);
     saveObject(PHOTO_KEY, state.photos);
     closeDay();
-    renderCalendar();
+    render();
     toast('dia limpinho ♡');
   }
 
   function setZoom(value) {
     state.zoom = clamp(Math.round(value * 100) / 100, 0.75, 1.25);
-    applyZoom();
-    try { localStorage.setItem(ZOOM_KEY, String(state.zoom)); } catch (error) { /* sem espaço */ }
-    positionBars();
-  }
-
-  function applyZoom() {
-    const card = root.querySelector('#cal-card');
-    if (!card) return;
-    card.style.transform = 'scale(' + state.zoom + ')';
-    root.style.setProperty('--cal-zoom', String(state.zoom));
+    applyStyle();
+    try { localStorage.setItem(ZOOM_KEY, String(state.zoom)); } catch (error) { }
   }
 
   function openTheme() {
@@ -942,7 +1289,7 @@
     state.style = Style.normalizar(Object.assign({}, state.style, patch));
     Style.guardar(localStorage, state.style);
     applyStyle();
-    if (redraw !== false) renderCalendar();
+    if (redraw !== false) render();
   }
 
   function renderTheme() {
@@ -994,7 +1341,7 @@
     state.style = Style.padrao();
     Style.guardar(localStorage, state.style);
     applyStyle();
-    renderCalendar();
+    render();
     renderTheme();
     toast('calendário de volta ao padrão ♡');
   }
@@ -1048,8 +1395,6 @@
     });
   }
 
-  /* ── adesivos ───────────────────────────────────────────── */
-
   function normalizeSticker(raw, index) {
     if (!raw || typeof raw !== 'object') return null;
     const src = String(raw.src || '').trim();
@@ -1065,7 +1410,6 @@
       border: Boolean(raw.border),
       z: Number(raw.z) || 21 + (index || 0)
     };
-    // coordenadas em porcentagem vêm dos adesivos antigos; viram pixels depois
     if (raw.pctX != null && raw.pctY != null) {
       item.pctX = clamp(raw.pctX, 0, 100);
       item.pctY = clamp(raw.pctY, 0, 100);
@@ -1103,8 +1447,6 @@
     if (moved) saveStickers();
   }
 
-  /* os adesivos antigos eram emojis ou fotos presas por porcentagem; viram
-     adesivos de verdade, do mesmo jeitinho, sem perder o que já estava colado */
   function migrateSticker(raw) {
     if (!raw || typeof raw !== 'object') return null;
     if (raw.src) {
@@ -1137,18 +1479,20 @@
     const layer = overlay();
     if (!layer) return null;
     const el = document.createElement('div');
-    el.className = 'placed-sticker with-shadow' + (item.border ? ' with-border' : '');
+    el.className = 'placed-sticker' + (item.border ? ' has-border' : '');
     el.dataset.id = item.id;
     el.style.left = item.x + 'px';
     el.style.top = item.y + 'px';
+    el.style.width = item.width + 'px';
+    el.style.height = item.width + 'px';
     el.style.zIndex = String(item.z);
     const image = document.createElement('img');
     image.src = item.src;
     image.alt = 'adesivo';
     image.draggable = false;
-    image.style.width = item.width + 'px';
-    image.loading = 'lazy';
+    image.decoding = 'async';
     image.addEventListener('load', function () { clampStickerEl(el, item); });
+    image.addEventListener('error', function () { el.classList.add('is-broken'); });
     el.appendChild(image);
     el.insertAdjacentHTML('beforeend', ''
       + '<span class="sticker-handle-rotate" title="girar">🔄</span>'
@@ -1161,22 +1505,28 @@
 
   function applyStickerTransform(el, item) {
     el.style.transform = 'rotate(' + item.rotation + 'deg)' + (item.flip ? ' scaleX(-1)' : '');
-    const image = el.querySelector('img');
-    if (image) image.style.width = item.width + 'px';
+    el.style.width = item.width + 'px';
+    el.style.height = item.width + 'px';
   }
 
   function placeSticker(src) {
     if (!src) return;
+    if (state.view !== 'month') {
+      state.view = 'month';
+      state.month = startOfMonth(state.cursor);
+      render();
+    }
     const layer = overlay();
     if (!layer) return;
     const width = layer.clientWidth || 600;
     const height = layer.clientHeight || 520;
+    const size = 85;
     const item = {
       id: uid('st'),
       src: src,
-      x: Math.max(8, width * 0.58 + (state.stickers.length % 5) * 14),
-      y: Math.max(8, height * 0.3 + (state.stickers.length % 5) * 14),
-      width: 85,
+      x: Math.max(4, Math.min(width - size - 4, width * 0.55 + (state.stickers.length % 5) * 14)),
+      y: Math.max(4, Math.min(height - size - 4, height * 0.3 + (state.stickers.length % 5) * 14)),
+      width: size,
       rotation: 0,
       flip: false,
       border: false,
@@ -1242,9 +1592,8 @@
     const drag = state.drag;
     if (!drag) return;
     event.preventDefault();
-    const scale = state.zoom || 1;
-    const dx = (event.clientX - drag.startX) / scale;
-    const dy = (event.clientY - drag.startY) / scale;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
     const item = drag.item;
     const el = drag.el;
 
@@ -1290,13 +1639,11 @@
     const width = layer.clientWidth;
     const height = layer.clientHeight;
     if (!width || !height) return;
-    const image = el.querySelector('img');
-    const stickerWidth = item.width || (image ? image.clientWidth : 85);
-    const stickerHeight = image ? (image.clientHeight || stickerWidth) : stickerWidth;
+    const size = item.width || 85;
     const minX = 0;
-    const maxX = width - stickerWidth - 2;
+    const maxX = width - size - 2;
     const minY = 4;
-    const maxY = height - stickerHeight - 4;
+    const maxY = height - size - 4;
     const nextX = clamp(item.x, minX, Math.max(minX, maxX));
     const nextY = clamp(item.y, minY, Math.max(minY, maxY));
     if (nextX !== item.x || nextY !== item.y) {
@@ -1320,6 +1667,12 @@
     state.stickerOpen = typeof force === 'boolean' ? force : !state.stickerOpen;
     const drawer = root.querySelector('#cal-sticker-drawer');
     if (!drawer) return;
+    if (state.stickerOpen && state.view !== 'month') {
+      state.view = 'month';
+      state.month = startOfMonth(state.cursor);
+      render();
+      clampStickers();
+    }
     drawer.classList.toggle('is-open', state.stickerOpen);
     if (state.stickerOpen) {
       renderStickerDrawer();
@@ -1392,12 +1745,11 @@
       : '';
     grid.innerHTML = visible.length ? visible.map(function (item) {
       return '<button class="cal-st-item" type="button" data-st-src="' + escape(item.src) + '" title="' + escape(item.name) + '">'
-        + '<img src="' + escape(item.src) + '" alt="' + escape(item.name) + '" loading="lazy">'
+        + '<img src="' + escape(item.src) + '" alt="' + escape(item.name) + '">'
         + '</button>';
     }).join('') + more : '<p class="cal-st-empty">nenhum adesivo encontrado</p>';
   }
 
-  /* as tarefinhas do app antigo chegam aqui e viram fitinhas no calendario */
   let pendingTaskImport = null;
 
   function importTasks(map) {
@@ -1430,11 +1782,10 @@
       });
       if (changed) saveObject(NOTE_KEY, state.notes);
       localStorage.setItem(TASKS_MIGRATED_KEY, '1');
-      if (changed) renderCalendar();
-    } catch (error) { /* sem espaco: seguimos com o que ja tem */ }
+      if (changed) render();
+    } catch (error) { }
   }
 
-  /* o botão "voltar" do Android fecha a janelinha aberta antes de sair */
   function closeTop() {
     if (!root) return false;
     const theme = root.querySelector('#cal-theme-modal');
@@ -1455,6 +1806,10 @@
       selectSticker(null);
       return true;
     }
+    if (state.view !== 'month') {
+      setView('month');
+      return true;
+    }
     return false;
   }
 
@@ -1463,8 +1818,7 @@
     closeTop: closeTop,
     importTasks: importTasks,
     redraw: function () {
-      renderCalendar();
-      positionBars();
+      render();
       clampStickers();
     }
   };
@@ -1475,10 +1829,7 @@
       applyTaskImport(pendingTaskImport);
       pendingTaskImport = null;
     }
-    window.setTimeout(function () {
-      positionBars();
-      clampStickers();
-    }, 60);
+    window.setTimeout(clampStickers, 80);
   }
 
   if (document.readyState === 'loading') {

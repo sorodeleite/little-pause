@@ -3,6 +3,22 @@
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
 
+## 0.6.0 — 2026-11-25 · jeito jorte
+
+o calendário ganhou o layout do Jorte, com horários e feriados, e os adesivos voltaram a aparecer.
+
+- **mês, semana e dia** — as três telinhas no topo; a semana e o dia têm a régua de horários (0h–23h),
+  com os eventos coloridos no lugar certinho e a linha do agora
+- **eventos com hora** — escolha “dia inteiro” ou o horário de começar e terminar; toque num espaço
+  vazio da régua e o evento já abre naquela hora
+- **feriados** — os feriados brasileiros aparecem em vermelho no mês e com o nome no topo do dia
+- **quadradinhos do mês** — número do dia, feriado, tarefinhas e eventos em linhas com a bolinha da
+  cor e “+N” quando não cabe tudo; domingo em vermelho e sábado em azul
+- **adesivos consertados** — eles voltaram a aparecer e a colar de verdade (antes ficava só uma
+  linha); agora têm tamanho certinho, carregam na hora e a gaveta tem altura de verdade
+- o adesivo continua solto por cima do calendário, arrastando, girando e aumentando nas bolinhas
+- a foto do dia, a carinha, o tema e o zoom continuam onde estavam
+
 ## 0.5.0 — 2026-11-25 · ajeitada geral
 
 o calendário do little place veio morar aqui, com tudo que ele tinha direito.

@@ -42,8 +42,8 @@ jeito gentil. Então esse aqui é do meu jeitinho.
 - **recadinhos** — lembretes com data e hora, para não esquecer o que importa.
 - **atualizações pelo próprio app** — como no *sleep my angel*: mostra a versão instalada e a nova, o
   que mudou em cada uma, baixa o APK com barra de progresso e instala por cima, sem desinstalar.
-- **um calendário inteiro** — o mesmo calendário que eu fiz para o *little place*, morando aqui dentro:
-  tarefinhas coloridas, carinhas do dia, eventos de vários dias, foto do dia e muitos adesivos.
+- **um calendário inteiro** — no jeitinho do *Jorte Calendar*, morando aqui dentro: mês, semana e dia,
+  eventos com horário, feriados brasileiros, tarefinhas coloridas, carinhas, foto do dia e adesivos.
 
 ## o calendário
 
@@ -54,13 +54,19 @@ jeito gentil. Então esse aqui é do meu jeitinho.
 </p>
 
 O calendário é a parte mais bonita e a mais pessoal do app. Ele veio do **little place** — um caderninho
-que eu fiz para mim e minhas amigas, e que virou o meu lugar preferido para escrever. A ideia era simplesmente copiar
-aquele código para cá, sem inventar moda, porque ele já estava do jeitinho que eu gosto.
+que eu fiz para mim e minhas amigas — e agora veste o layout do **Jorte Calendar**, que é o jeito de
+calendário que eu mais gosto: os quadradinhos, as linhas dos eventos, a régua dos horários e os feriados.
 
-- **tarefinhas** — cada linha vira uma fitinha colorida no dia, e elas atravessam a semana quando o
-  evento é longo.
+- **mês, semana e dia** — as três telinhas no topo. No mês, cada dia mostra o número, o feriado em
+  vermelho e as tarefinhas e eventos como linhas com a bolinha da cor; o que não cabe vira “+N”.
+- **horários** — a semana e o dia têm a régua de 0h a 23h, com os eventos no lugar certinho, a linha
+  do agora e a faixa do dia todo no topo. Tocar num espaço vazio da régua já abre o evento naquela hora.
+- **eventos com hora** — “dia inteiro” ou o horário de começar e terminar, com a cor que você escolher;
+  os eventos de vários dias continuam atravessando a semana.
+- **feriados** — os feriados brasileiros (fixos e os de Páscoa) aparecem em vermelho no mês e com o
+  nome no topo do dia.
+- **tarefinhas** — cada linha vira uma fitinha colorida no dia.
 - **carinhas do dia** — um emoji para marcar o clima daquele dia.
-- **eventos de vários dias** — viagem, prova, aniversário: escolhe a cor e a faixa se estica pelo calendário.
 - **foto do dia** — uma fotinha preenche o quadradinho do dia.
 - **meu calendário 🎨** — fundo (bolinhas, nuvens, xadrez, papel, a sua própria foto), estilo dos
   quadradinhos, cor de cada detalhe, sete letras diferentes e o numerinho do lado (dia do ano, semana,
@@ -130,7 +136,8 @@ app/src/main/
     AppBlockingService.kt · KeepAlive.kt · BlockSchedules.kt · AppDailyLimitsCard.kt
     Reminders.kt · DailyUsageReceiver.kt · AppUpdater.kt · UpdateSection.kt
   assets/calendar/
-    index.html · planner.js · calendar.css · calendar-style.js · calendar-events.js
+    index.html · planner.js · calendar.css · calendar-jorte.css
+    calendar-style.js · calendar-events.js · calendar-holidays.js
     fonts/ · stickers/ · sticker-manifest.js
 CHANGELOG.md
 ```
@@ -142,7 +149,7 @@ CHANGELOG.md
 3. faça commit e push na `main`.
 
 O workflow **Android build** monta o APK assinado, confere a assinatura e, se a tag daquela versão ainda
-não existir, publica sozinho o release `v0.5.0` com o arquivo `little-pause.apk` — exatamente o nome que
+não existir, publica sozinho o release `v0.6.0` com o arquivo `little-pause.apk` — exatamente o nome que
 o app procura quando você toca em “baixar atualização”. Se a versão já tiver release, ele só guarda o
 APK como artefato e não publica nada de novo.
 
