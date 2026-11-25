@@ -26,7 +26,7 @@ jeito gentil. Então esse aqui é do meu jeitinho.
   <img src="docs/readme/tea-table.webp" alt="mesinha de chá" width="150">
 </p>
 
-<p align="center"><em>um pouco do clima: porcelana, pastel, chá da tarde, sorte pequena</em></p>
+<p align="center"><em>um pouco do clima: porcelana, chá da tarde</em></p>
 
 ---
 
