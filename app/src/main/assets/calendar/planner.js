@@ -2017,12 +2017,23 @@
   };
 
   function boot() {
-    init();
-    if (pendingTaskImport) {
-      applyTaskImport(pendingTaskImport);
-      pendingTaskImport = null;
+    try {
+      init();
+      if (pendingTaskImport) {
+        applyTaskImport(pendingTaskImport);
+        pendingTaskImport = null;
+      }
+      window.setTimeout(clampStickers, 80);
+    } catch (error) {
+      console.error('Little Pause calendar boot failed:', error);
+      const target = document.getElementById('planner-root');
+      if (target) {
+        target.innerHTML = '<div class="planner-error"><strong>não consegui abrir o calendário</strong><p>houve um erro ao montar a tela. feche e abra o calendário novamente ♡</p></div>';
+      }
+      if (typeof window.__littlePauseCalendarReady === 'function') {
+        window.__littlePauseCalendarReady(0);
+      }
     }
-    window.setTimeout(clampStickers, 80);
   }
 
   if (document.readyState === 'loading') {

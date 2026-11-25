@@ -478,6 +478,7 @@
 }
 
 #planner-root .cal-day-card {
+  min-height: min(70dvh, 560px);
   padding: 16px 16px 14px;
 }
 
@@ -1190,6 +1191,7 @@
   display: none;
   flex-direction: column;
   width: min(96vw, 720px);
+  height: min(58vh, 560px);
   max-height: min(58vh, 560px);
   transform: translateX(-50%);
   border: 2px solid var(--accent-taupe-soft);
@@ -1385,6 +1387,7 @@
   #planner-root .cal-sticker-drawer {
     bottom: 82px;
     width: calc(100vw - 14px);
+    height: 54vh;
     max-height: 54vh;
   }
 

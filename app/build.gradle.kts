@@ -42,8 +42,8 @@ android {
         applicationId = "com.littlepause"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "0.7.0"
+        versionCode = 24
+        versionName = "0.7.1"
     }
 
     compileOptions {

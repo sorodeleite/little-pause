@@ -1,7 +1,14 @@
+# changelog
+
 # novidades do little pause
 
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
+
+## 0.7.1 — 2026-11-25 · correções do calendário
+
+- correção do tamanho dos cartões de edição e da caixinha de adesivos em telas pequenas
+- inicialização do calendário com tratamento de erro para evitar uma tela totalmente vazia quando algum componente falhar
 
 ## 0.7.0 — 2026-11-25 · feriados, fitinhas e carinhas
 
