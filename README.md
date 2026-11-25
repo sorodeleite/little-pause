@@ -13,10 +13,8 @@
 </p>
 
 O **little pause** é um app de controle de uso — daqueles que seguram os aplicativos que a gente abre sem
-perceber. Ele nasceu de um incômodo bem simples: os bloqueadores que existiam eram todos cinzas, com
-cadeados, cronômetros e um tom de sermão. Nenhum combinava com a vontade de cuidar do meu tempo de um
-jeito gentil. Então esse aqui é do meu jeitinho: porcelana, laço, papel de carta e uma pausa que conversa
-com você em vez de brigar.
+perceber. Ele nasceu de um incômodo bem simples: os bloqueadores que existiam eram todos cinzas, sem graça, e ainda pagos! dá pra imaginar isso? pois é. Nenhum combinava com a vontade de cuidar do meu tempo de um
+jeito gentil. Então esse aqui é do meu jeitinho.
 
 <p align="center">
   <img src="docs/readme/teapot.webp" alt="bule de porcelana" width="150">
@@ -54,7 +52,7 @@ com você em vez de brigar.
 </p>
 
 O calendário é a parte mais bonita e a mais pessoal do app. Ele veio do **little place** — um caderninho
-que eu fiz para mim e que virou o meu lugar preferido para escrever. A ideia era simplesmente copiar
+que eu fiz para mim e minhas amigas, e que virou o meu lugar preferido para escrever. A ideia era simplesmente copiar
 aquele código para cá, sem inventar moda, porque ele já estava do jeitinho que eu gosto.
 
 - **tarefinhas** — cada linha vira uma fitinha colorida no dia, e elas atravessam a semana quando o
@@ -78,7 +76,7 @@ aplicativo. E os seus dias ficam só no seu celular.
 
 ## as asinhas (ou: o Android não vai cortar)
 
-Um app que fica de vigia tem um inimigo silencioso: a economia de bateria do Android. Quando a tela
+Um app que fica de vigia seu celular tem um inimigo silencioso: a economia de bateria do Android. Quando a tela
 apaga, o sistema costuma fechar quem está monitorando — e aí a pausa simplesmente… some.
 
 O little pause se defende disso com carinho e sem exagero:
