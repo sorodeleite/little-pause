@@ -9,6 +9,7 @@
   const PHOTO_KEY = 'lp_cal_photos';
   const STICKER_KEY = 'lp_cal_stickers';
   const ZOOM_KEY = 'lp_cal_zoom';
+  const TASKS_MIGRATED_KEY = 'lp_cal_tasks_migrated';
 
   const MONTHS = [
     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -1396,6 +1397,43 @@
     }).join('') + more : '<p class="cal-st-empty">nenhum adesivo encontrado</p>';
   }
 
+  /* as tarefinhas do app antigo chegam aqui e viram fitinhas no calendario */
+  let pendingTaskImport = null;
+
+  function importTasks(map) {
+    if (!map || typeof map !== 'object') return;
+    if (!root || !root.dataset.ready) {
+      pendingTaskImport = map;
+      return;
+    }
+    applyTaskImport(map);
+  }
+
+  function applyTaskImport(map) {
+    try {
+      if (localStorage.getItem(TASKS_MIGRATED_KEY) === '1') return;
+      let changed = false;
+      Object.keys(map).forEach(function (key) {
+        if (!parseDate(key)) return;
+        const incoming = String(map[key] || '').split(/\r?\n/).map(function (line) {
+          return line.trim();
+        }).filter(Boolean);
+        if (!incoming.length) return;
+        const current = String(state.notes[key] || '').split(/\r?\n/).map(function (line) {
+          return line.trim();
+        }).filter(Boolean);
+        const merged = current.concat(incoming.filter(function (line) {
+          return current.indexOf(line) === -1;
+        }));
+        state.notes[key] = merged.join('\n');
+        changed = true;
+      });
+      if (changed) saveObject(NOTE_KEY, state.notes);
+      localStorage.setItem(TASKS_MIGRATED_KEY, '1');
+      if (changed) renderCalendar();
+    } catch (error) { /* sem espaco: seguimos com o que ja tem */ }
+  }
+
   /* o botão "voltar" do Android fecha a janelinha aberta antes de sair */
   function closeTop() {
     if (!root) return false;
@@ -1423,6 +1461,7 @@
   window.LittlePausePlanner = {
     init: init,
     closeTop: closeTop,
+    importTasks: importTasks,
     redraw: function () {
       renderCalendar();
       positionBars();
@@ -1432,6 +1471,10 @@
 
   function boot() {
     init();
+    if (pendingTaskImport) {
+      applyTaskImport(pendingTaskImport);
+      pendingTaskImport = null;
+    }
     window.setTimeout(function () {
       positionBars();
       clampStickers();

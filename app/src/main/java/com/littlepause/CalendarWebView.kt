@@ -52,6 +52,7 @@ fun CalendarView(
     AndroidView(
         modifier = modifier,
         factory = { viewContext ->
+            val legacyTasks = legacyTasksJson(viewContext)
             WebView(viewContext).apply {
                 setBackgroundColor(Color.rgb(255, 253, 252))
                 settings.apply {
@@ -83,6 +84,12 @@ fun CalendarView(
                         ) { count ->
                             Log.d(CALENDAR_TAG, "calendário carregado; células: $count")
                         }
+                        if (legacyTasks != null) {
+                            view?.evaluateJavascript(
+                                "window.LittlePausePlanner && window.LittlePausePlanner.importTasks($legacyTasks)",
+                                null
+                            )
+                        }
                     }
                 }
                 webChromeClient = object : WebChromeClient() {
@@ -102,10 +109,12 @@ fun CalendarView(
                         return true
                     }
                 }
-                latestReady.value(this)
+                val created = this
                 loadUrl(CALENDAR_URL)
+                post { latestReady.value(created) }
             }
         },
-        update = { }
+        update = { },
+        onRelease = { view -> runCatching { view.destroy() } }
     )
 }

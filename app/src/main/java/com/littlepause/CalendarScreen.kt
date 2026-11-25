@@ -25,12 +25,15 @@ internal fun CalendarScreen(onLeave: () -> Unit) {
             onLeave()
             return@BackHandler
         }
-        view.evaluateJavascript(
-            "(window.LittlePausePlanner && window.LittlePausePlanner.closeTop)" +
-                " ? window.LittlePausePlanner.closeTop() : false"
-        ) { result ->
-            if (result != "true") onLeave()
-        }
+        val sent = runCatching {
+            view.evaluateJavascript(
+                "(window.LittlePausePlanner && window.LittlePausePlanner.closeTop)" +
+                    " ? window.LittlePausePlanner.closeTop() : false"
+            ) { result ->
+                if (result != "true") onLeave()
+            }
+        }.isSuccess
+        if (!sent) onLeave()
     }
 
     CalendarView(

@@ -44,12 +44,14 @@ private data class ScheduleApp(val packageName: String, val label: String)
 
 private fun readBlockSchedules(prefs: android.content.SharedPreferences): List<BlockSchedule> {
     val raw = runCatching { JSONArray(prefs.getString("block_schedules_json", "[]")) }.getOrNull() ?: JSONArray()
-    if (raw.length() == 0) {
+    val alreadyMigrated = prefs.getBoolean("block_schedules_migrated", false)
+    if (raw.length() == 0 && !alreadyMigrated) {
         val oldApps = prefs.getStringSet("blocked_apps", emptySet()).orEmpty()
         if (oldApps.isNotEmpty()) {
             val hadSchedule = prefs.getBoolean("schedule_enabled", false)
             val oldDays = if (hadSchedule) prefs.getStringSet("schedule_days", setOf("1", "2", "3", "4", "5")).orEmpty()
                 else setOf("1", "2", "3", "4", "5", "6", "7")
+            prefs.edit().putBoolean("block_schedules_migrated", true).apply()
             return listOf(
                 BlockSchedule(
                     id = System.currentTimeMillis(),
@@ -86,7 +88,10 @@ private fun writeBlockSchedules(prefs: android.content.SharedPreferences, schedu
         json.put(JSONObject().put("id", schedule.id).put("start", schedule.start).put("end", schedule.end)
             .put("days", dayArray).put("packages", appArray).put("enabled", schedule.enabled))
     }
-    prefs.edit().putString("block_schedules_json", json.toString()).apply()
+    prefs.edit()
+        .putString("block_schedules_json", json.toString())
+        .putBoolean("block_schedules_migrated", true)
+        .apply()
 }
 
 private fun scheduleApps(context: Context): List<ScheduleApp> {
