@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -28,9 +29,7 @@ class DailyUsageReceiver : BroadcastReceiver() {
         val usageAllowed = hasUsageAccess(context)
         val totalMillis = if (usageAllowed) {
             val usageManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-            usageManager.queryAndAggregateUsageStats(start, now)
-                .filterKeys { it != context.packageName }
-                .values.sumOf { it.totalTimeInForeground }
+            calculateUniqueForegroundTime(usageManager, start, now)
         } else 0L
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -55,6 +54,57 @@ class DailyUsageReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         notificationManager.notify(2200, notification)
+    }
+
+    /**
+     * Counts the union of foreground activity intervals. Summing each app's
+     * totalTimeInForeground can count the same wall-clock minute more than
+     * once when Android reports overlapping/multi-resume activities.
+     */
+    private fun calculateUniqueForegroundTime(
+        usageManager: UsageStatsManager,
+        start: Long,
+        end: Long
+    ): Long {
+        val events = usageManager.queryEvents(start, end)
+        val activeActivities = mutableSetOf<String>()
+        var activeSince: Long? = null
+        var total = 0L
+        val event = UsageEvents.Event()
+
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            val packageName = event.packageName ?: continue
+            val activityKey = "$packageName/${event.className.orEmpty()}"
+
+            when (event.eventType) {
+                UsageEvents.Event.ACTIVITY_RESUMED,
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> {
+                    val wasInactive = activeActivities.isEmpty()
+                    activeActivities.add(activityKey)
+                    if (wasInactive && activeActivities.isNotEmpty()) {
+                        activeSince = event.timeStamp.coerceIn(start, end)
+                    }
+                }
+                UsageEvents.Event.ACTIVITY_PAUSED,
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> {
+                    activeActivities.remove(activityKey)
+                    if (activeActivities.isEmpty()) {
+                        activeSince?.let { since ->
+                            total += (event.timeStamp.coerceIn(start, end) - since).coerceAtLeast(0L)
+                        }
+                        activeSince = null
+                    }
+                }
+            }
+        }
+
+        if (activeActivities.isNotEmpty()) {
+            activeSince?.let { since ->
+                total += (end - since).coerceAtLeast(0L)
+            }
+        }
+        return total.coerceAtMost(end - start)
     }
 
     private fun scheduleNext(context: Context) {
