@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -44,9 +45,10 @@ jobs:
           test -n "$LITTLE_PAUSE_KEY_ALIAS"
           test -n "$LITTLE_PAUSE_KEY_PASSWORD"
           gradle assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk little-pause.apk
 
       - name: Publish APK
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/app-release.apk
+          files: little-pause.apk
           generate_release_notes: true

@@ -1,16 +1,18 @@
-package com.littlepause
+﻿package com.littlepause
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,16 +23,30 @@ private data class LimitApp(val pkg: String, val label: String)
 @Composable
 fun AppDailyLimitsCard() {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { context.getSharedPreferences("little_pause", Context.MODE_PRIVATE) }
+    val prefs = remember { context.getSharedPreferences(KeepAlive.PREFS, Context.MODE_PRIVATE) }
     val apps = remember(context) {
-        context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
-            .mapNotNull { info -> val p = info.activityInfo.packageName; if (p == context.packageName) null else LimitApp(p, info.loadLabel(context.packageManager).toString()) }
-            .distinctBy { it.pkg }.sortedBy { it.label.lowercase() }
+        context.packageManager.queryIntentActivities(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0
+        )
+            .mapNotNull { info ->
+                val pkg = info.activityInfo.packageName
+                if (pkg == context.packageName) null
+                else LimitApp(pkg, info.loadLabel(context.packageManager).toString())
+            }
+            .distinctBy { it.pkg }
+            .sortedBy { it.label.lowercase() }
     }
     fun read(): Map<String, Int> {
-        val j = runCatching { JSONObject(prefs.getString("app_daily_limits_json", "{}") ?: "{}") }.getOrNull() ?: JSONObject()
-        val out = mutableMapOf<String, Int>(); val keys = j.keys()
-        while (keys.hasNext()) { val k = keys.next(); val v = j.optInt(k); if (v in 1..1440) out[k] = v }
+        val json = runCatching {
+            JSONObject(prefs.getString("app_daily_limits_json", "{}") ?: "{}")
+        }.getOrNull() ?: JSONObject()
+        val out = mutableMapOf<String, Int>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val value = json.optInt(key)
+            if (value in 1..1440) out[key] = value
+        }
         return out
     }
     var limits by remember { mutableStateOf(read()) }
@@ -38,44 +54,116 @@ fun AppDailyLimitsCard() {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<LimitApp?>(null) }
     var minutes by remember { mutableStateOf("60") }
-    fun save(next: Map<String, Int>) { limits = next; val j = JSONObject(); next.forEach { (k,v) -> j.put(k,v) }; prefs.edit().putString("app_daily_limits_json", j.toString()).apply() }
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    fun save(next: Map<String, Int>) {
+        limits = next
+        val json = JSONObject()
+        next.forEach { (key, value) -> json.put(key, value) }
+        prefs.edit().putString("app_daily_limits_json", json.toString()).apply()
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Paper),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(0.7.dp, Line)
+    ) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row {
-                Column(Modifier.weight(1f)) {
-                    Text("limites diários por app ♡", fontSize = 16.sp, color = Color(0xFF51494A))
-                    Text("tempo acumulado em todas as sessões", fontSize = 11.sp, color = Color(0xFF9C9293))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("limites diÃ¡rios por app â™¡", fontSize = 16.sp, color = Ink)
+                    Text("tempo acumulado em todas as sessÃµes do dia", fontSize = 11.sp, color = Muted)
                 }
-                TextButton(onClick = { picker = true; query = "" }) { Text("+ adicionar", color = Color(0xFFB87588)) }
+                TextButton(onClick = { picker = true; query = "" }) {
+                    Text("+ adicionar", color = RoseDeep, fontSize = 12.sp)
+                }
             }
-            if (limits.isEmpty()) Text("nenhum limite configurado ainda ♡", color = Color.Gray, fontSize = 12.sp)
+            if (limits.isEmpty()) {
+                Text("nenhum limite configurado ainda â™¡", color = Muted, fontSize = 12.sp)
+            }
             limits.forEach { (pkg, value) ->
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Text((apps.firstOrNull { it.pkg == pkg }?.label ?: pkg) + " · " + value + " min/dia", Modifier.weight(1f), fontSize = 12.sp)
-                    TextButton(onClick = { selected = apps.firstOrNull { it.pkg == pkg }; minutes = value.toString() }) { Text("editar") }
-                    TextButton(onClick = { save(limits - pkg) }) { Text("×") }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        (apps.firstOrNull { it.pkg == pkg }?.label ?: pkg) + " Â· " + value + " min/dia",
+                        Modifier.weight(1f), fontSize = 12.sp, color = Ink
+                    )
+                    TextButton(onClick = {
+                        selected = apps.firstOrNull { it.pkg == pkg }
+                        minutes = value.toString()
+                    }) { Text("editar", color = RoseDeep, fontSize = 11.sp) }
+                    TextButton(onClick = { save(limits - pkg) }) {
+                        Text("Ã—", color = Muted, fontSize = 14.sp)
+                    }
                 }
             }
-            Text("ao atingir o limite, o app fica bloqueado até o próximo dia ♡", color = Color.Gray, fontSize = 10.sp)
+            Text("ao atingir o limite, o app entra na pausa atÃ© o prÃ³ximo dia â™¡", color = Muted, fontSize = 10.sp)
         }
     }
-    if (picker) AlertDialog(onDismissRequest = { picker = false }, title = { Text("escolha um aplicativo ♡") }, text = {
-        Column {
-            OutlinedTextField(query, { query = it }, placeholder = { Text("pesquisar aplicativo...") })
-            LazyColumn(Modifier.heightIn(max = 320.dp)) {
-                items(apps.filter { it.label.contains(query, true) || it.pkg.contains(query, true) }, key = { it.pkg }) { app ->
-                    Row(Modifier.fillMaxWidth().clickable { selected = app; minutes = (limits[app.pkg] ?: 60).toString(); picker = false }.padding(8.dp)) { Text(app.label) }
+
+    if (picker) {
+        AlertDialog(
+            onDismissRequest = { picker = false },
+            containerColor = Paper,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("escolha um aplicativo â™¡", color = Ink) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = { Text("pesquisar aplicativo...") },
+                        singleLine = true
+                    )
+                    LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                        items(
+                            apps.filter { it.label.contains(query, true) || it.pkg.contains(query, true) },
+                            key = { it.pkg }
+                        ) { app ->
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clickable {
+                                        selected = app
+                                        minutes = (limits[app.pkg] ?: 60).toString()
+                                        picker = false
+                                    }
+                                    .padding(8.dp)
+                            ) { Text(app.label, color = Ink, fontSize = 13.sp) }
+                        }
+                    }
                 }
+            },
+            confirmButton = {
+                TextButton(onClick = { picker = false }) { Text("fechar", color = Muted) }
             }
-        }
-    }, confirmButton = { TextButton(onClick = { picker = false }) { Text("fechar") } })
+        )
+    }
+
     selected?.let { app ->
-        AlertDialog(onDismissRequest = { selected = null }, title = { Text(app.label) }, text = {
-            Column {
-                Text("limite diário acumulado")
-                OutlinedTextField(minutes, { minutes = it.filter(Char::isDigit).take(4) }, label = { Text("minutos por dia") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        AlertDialog(
+            onDismissRequest = { selected = null },
+            containerColor = Paper,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text(app.label, color = Ink) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("limite diÃ¡rio acumulado", color = Muted, fontSize = 12.sp)
+                    OutlinedTextField(
+                        value = minutes,
+                        onValueChange = { minutes = it.filter(Char::isDigit).take(4) },
+                        label = { Text("minutos por dia") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val value = minutes.toIntOrNull()
+                    if (value != null && value in 1..1440) save(limits + (app.pkg to value))
+                    selected = null
+                }) { Text("salvar", color = RoseDeep) }
+            },
+            dismissButton = {
+                TextButton(onClick = { selected = null }) { Text("cancelar", color = Muted) }
             }
-        }, confirmButton = { TextButton(onClick = { val n = minutes.toIntOrNull(); if (n != null && n in 1..1440) save(limits + (app.pkg to n)); selected = null }) { Text("salvar") } },
-            dismissButton = { TextButton(onClick = { selected = null }) { Text("cancelar") } })
+        )
     }
 }

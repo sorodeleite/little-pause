@@ -4,15 +4,21 @@ on:
   push:
     branches: [main]
     paths:
-      - "app/build.gradle.kts"
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
   workflow_dispatch:
 
-concurrency:
-  group: little-pause-release
-  cancel-in-progress: true
-
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -57,18 +63,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: little-pause-0.4.2
+          name: little-pause-apk
           path: little-pause.apk
           if-no-files-found: error
-
-      - name: Publish signed update
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v0.4.2
-          name: Little Pause 0.4.2
-          body: |
-            Atualização do Little Pause.
-
-            Baixe little-pause.apk e instale pelo próprio aplicativo.
-          files: little-pause.apk
-          overwrite_files: true

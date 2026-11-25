@@ -1,11 +1,7 @@
 package com.littlepause
 
-import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Process
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,11 +24,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
 
-private val ScheduleRose = Color(0xFFB87588)
-private val ScheduleInk = Color(0xFF51494A)
-private val ScheduleMuted = Color(0xFF9C9293)
+private val ScheduleRose = Color(0xFFC17E93)
+private val ScheduleInk = Color(0xFF463529)
+private val ScheduleMuted = Color(0xFF7D6B5E)
 private val SchedulePaper = Color(0xFFFFFDFC)
-private val ScheduleBlush = Color(0xFFFFF1F4)
+private val ScheduleBlush = Color(0xFFFDEEF1)
 private val ScheduleDays = listOf("D", "S", "T", "Q", "Q", "S", "S")
 private val ScheduleDayKeys = listOf("7", "1", "2", "3", "4", "5", "6")
 
@@ -101,13 +97,8 @@ private fun scheduleApps(context: Context): List<ScheduleApp> {
     }.distinctBy { it.packageName }.sortedBy { it.label.lowercase(Locale("pt", "BR")) }
 }
 
-private fun scheduleHasUsageAccess(context: Context): Boolean {
-    val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    return ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName) == AppOpsManager.MODE_ALLOWED
-}
-
 @Composable
-fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit) {
+fun BlockSchedulesCard(onChanged: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("little_pause", Context.MODE_PRIVATE) }
     val schedules = remember { mutableStateListOf<BlockSchedule>().apply { addAll(readBlockSchedules(prefs)) } }
@@ -119,11 +110,8 @@ fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit)
     var days by remember { mutableStateOf(setOf("1", "2", "3", "4", "5")) }
     var chosenPackages by remember { mutableStateOf(setOf<String>()) }
     var search by remember { mutableStateOf("") }
-    var usageAllowed by remember { mutableStateOf(scheduleHasUsageAccess(context)) }
-    var overlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
-    fun persist() { writeBlockSchedules(prefs, schedules) }
-    val hasDailyLimits = runCatching { JSONObject(prefs.getString("app_daily_limits_json", "{}") ?: "{}").length() > 0 }.getOrDefault(false)
+    fun persist() { writeBlockSchedules(prefs, schedules); onChanged() }
     fun openEditor(schedule: BlockSchedule?) {
         editingId = schedule?.id
         start = schedule?.start ?: "08:00"
@@ -181,32 +169,12 @@ fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("permissões do bloqueio", color = ScheduleInk, fontSize = 13.sp)
-                    Text("uso: ${if (usageAllowed) "ok" else "precisa permitir"}  ·  sobrepor: ${if (overlayAllowed) "ok" else "precisa permitir"}",
-                        color = ScheduleMuted, fontSize = 10.sp)
-                }
-                TextButton(onClick = {
-                    usageAllowed = scheduleHasUsageAccess(context)
-                    overlayAllowed = Settings.canDrawOverlays(context)
-                    if (!usageAllowed) context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                    else if (!overlayAllowed) context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
-                }) { Text("verificar", color = ScheduleRose, fontSize = 11.sp) }
+                Text(
+                    if (schedules.isEmpty()) "nenhuma pausa montada ainda ♡"
+                    else "${schedules.count { it.enabled }} pausa(s) ativa(s) · os apps escolhidos ficam quietinhos nesses horários",
+                    color = ScheduleMuted, fontSize = 10.sp
+                )
             }
-            Button(
-                onClick = {
-                    usageAllowed = scheduleHasUsageAccess(context)
-                    overlayAllowed = Settings.canDrawOverlays(context)
-                    if (!usageAllowed) context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                    else if (!overlayAllowed) context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
-                    else onToggleBlocking(!isBlocking)
-                },
-                enabled = isBlocking || schedules.any { it.enabled && it.packages.isNotEmpty() } || hasDailyLimits,
-                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isBlocking) Color(0xFFB99DA7) else ScheduleRose)
-            ) { Text(if (isBlocking) "desativar todos os bloqueios" else "ativar bloqueios", color = Color.White) }
-            Text(if (isBlocking) "seus horários e limites diários estão sendo monitorados ♡" else "ative para monitorar horários e limites diários",
-                color = ScheduleMuted, fontSize = 10.sp)
         }
     }
 

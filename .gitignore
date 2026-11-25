@@ -1,0 +1,17 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+local.properties
+captures/
+*.iml
+.idea/
+
+# chaves de assinatura (nunca versionar)
+*.jks
+*.keystore
+signing/
+
+# sistema
+.DS_Store
+Thumbs.db

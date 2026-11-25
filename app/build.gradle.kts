@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -42,8 +42,8 @@ android {
         applicationId = "com.littlepause"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "0.4.7"
+        versionCode = 21
+        versionName = "0.5.0"
     }
 
     compileOptions {

@@ -1,41 +1,44 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="color-scheme" content="light"><title>Little Pause · calendário</title>
-<link rel="stylesheet" href="calendar.css"></head>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>little pause · calendário</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="calendar.css">
+</head>
 <body>
-<div id="calendar-diagnostic" role="status" style="position:fixed;left:8px;right:8px;top:8px;z-index:9999;padding:10px 12px;border:1px solid #eadde0;border-radius:12px;background:#fff7fa;color:#76515e;font:12px/1.45 system-ui,sans-serif;box-shadow:0 2px 12px #0001">Little Pause: iniciando calendário…</div>
+<div id="planner-root"></div>
+<div id="lp-boot-error" role="status" hidden>
+  <strong>não consegui abrir o calendário</strong>
+  <span id="lp-boot-error-detail">recarregue a tela e tente de novo ♡</span>
+</div>
 <script>
-(function(){
-  var box=document.getElementById('calendar-diagnostic');
-  window.__littlePauseCalendarReady=function(count){
-    if(box){box.textContent='Calendário carregado ♡ ('+count+' dias)';box.style.background='#f3fff6';box.style.color='#386348';}
-    setTimeout(function(){if(box&&box.parentNode)box.parentNode.removeChild(box);},1800);
-  };
-  function fail(message,source,line){
-    if(!box)return;
-    box.style.background='#fff0f0';box.style.color='#9b3030';
-    box.textContent='Não foi possível abrir o calendário: '+message+(source?' · '+source:'')+(line?' · linha '+line:'');
+(function () {
+  var box = document.getElementById('lp-boot-error');
+  var detail = document.getElementById('lp-boot-error-detail');
+  function show(message) {
+    if (!box) return;
+    if (detail && message) detail.textContent = message;
+    box.hidden = false;
   }
-  window.addEventListener('error',function(e){fail(e.message||'erro de JavaScript',e.filename,e.lineno);});
-  window.addEventListener('unhandledrejection',function(e){var reason=e.reason;fail(reason&&reason.message?reason.message:String(reason||'erro assíncrono'));});
+  window.__littlePauseCalendarReady = function (count) {
+    if (count > 0) { box.hidden = true; return; }
+    show('o calendário abriu vazio. tenta recarregar ♡');
+  };
+  window.addEventListener('error', function (event) {
+    show(event && event.message ? event.message : 'erro inesperado');
+  });
+  window.addEventListener('unhandledrejection', function (event) {
+    var reason = event && event.reason;
+    show(reason && reason.message ? reason.message : 'erro inesperado');
+  });
 })();
 </script>
-<main id="view-calendar" data-domingo="sim" data-quadros="grade" data-fonte="batang"><div class="calendar-wrapper">
-<div class="calendar-top-controls"><div class="cal-month-nav"><button id="btn-prev-month" class="cal-nav-btn" aria-label="Mês anterior">‹</button><span id="calendar-month-year" class="cal-month-title"></span><button id="btn-next-month" class="cal-nav-btn" aria-label="Próximo mês">›</button></div><div class="cal-zoom-controls"><button id="btn-calendar-theme" class="cal-zoom-btn cal-theme-btn" aria-label="Personalizar">🎨</button><button id="btn-zoom-out-cal" class="cal-zoom-btn" aria-label="Diminuir">−</button><button id="btn-zoom-in-cal" class="cal-zoom-btn" aria-label="Aumentar">＋</button></div></div>
-<div class="calendar-decor-card" id="calendar-card"><div class="weekdays-grid"><span data-dia="dom">dom</span><span data-dia="seg">seg</span><span data-dia="ter">ter</span><span data-dia="qua">qua</span><span data-dia="qui">qui</span><span data-dia="sex">sex</span><span data-dia="sab">sáb</span></div><div class="days-grid" id="calendar-days-grid"></div><div class="stickers-overlay" id="calendar-stickers-overlay"></div></div>
-<div class="calendar-bottom-tools"><button id="btn-add-sticker">🎀 adesivos</button><button id="btn-add-event">＋ evento</button><span>toque em um dia para organizar ♡</span></div></div></main>
-<div class="cal-modal" id="day-modal"><div class="cal-modal-backdrop" data-close="day-modal"></div><section class="cal-modal-card"><header><div><h2 id="day-title">tarefinhas do dia</h2><p id="day-date-label"></p></div><button data-close="day-modal">✕</button></header>
-<label class="field-label" for="day-tasks">tarefinhas · uma por linha</label><textarea id="day-tasks" maxlength="600" placeholder="uma tarefinha por linha…"></textarea><div id="task-preview" class="task-preview"></div>
-<div class="field-label">carinha do dia</div><div id="day-reactions" class="reaction-row"></div><div class="section-line"><span>evento de vários dias</span></div><input id="event-title" maxlength="60" placeholder="ex.: viagem, prova, aniversário…">
-<div class="event-controls"><label>até <input id="event-end" type="date"></label><div id="event-colors" class="reaction-row"></div></div><button id="btn-event-add" class="soft-action">+ adicionar evento</button><div id="event-list" class="event-list"></div>
-<div class="section-line"><span>foto do dia</span></div><div class="photo-controls"><label class="soft-action" for="day-photo-upload">🖼️ escolher foto</label><input id="day-photo-upload" type="file" accept="image/*" hidden><button id="day-photo-clear" class="soft-action">tirar foto</button></div><label class="check-line"><input type="checkbox" id="photo-front"> foto por cima do texto</label>
-<footer><button data-close="day-modal" class="soft-action">cancelar</button><button id="day-save" class="primary-action">guardar ♡</button></footer></section></div>
-<div class="cal-modal" id="theme-modal"><div class="cal-modal-backdrop" data-close="theme-modal"></div><section class="cal-modal-card"><header><div><h2>🎨 meu calendário</h2><p>o fundo, os quadradinhos e as tarefinhas ⋆</p></div><button data-close="theme-modal">✕</button></header>
-<div class="field-label">fundo</div><div id="cal-fundo-grid" class="choice-grid"></div><div class="theme-row"><label>cor do fundo <input id="cal-fundo-cor" type="color"></label><label>detalhe <input id="cal-detalhe-cor" type="color"></label></div>
-<div class="field-label">quadradinhos</div><div id="cal-quadros-grid" class="choice-grid"></div><div class="theme-row"><label>quadrado <input id="cal-celula-cor" type="color"></label><label>linha <input id="cal-linha-cor" type="color"></label><label>número <input id="cal-texto-cor" type="color"></label></div>
-<label class="select-line">letra <select id="cal-fonte-select"><option value="batang">Gowun Batang</option><option value="nunito">Nunito</option><option value="patrick">Patrick Hand</option><option value="caveat">Caveat</option><option value="gloria">Gloria</option><option value="indie">Indie Flower</option><option value="vt323">VT323</option></select></label>
-<label class="select-line">numerinho do lado <select id="cal-mini-select"><option value="nada">sem numerinho</option><option value="dia">dia do ano</option><option value="semana">semana do ano</option><option value="mesdia" selected>data curtinha</option></select></label>
-<label class="select-line">cor das tarefinhas <select id="cal-paleta-select"><option value="romantica">romântica</option><option value="terrosa">terrosa</option><option value="pastel">pastel</option><option value="neutra">neutra</option></select></label><label class="check-line"><input type="checkbox" id="cal-domingo-vermelho" checked> domingo vermelho</label>
-<div class="theme-row"><label class="soft-action" for="cal-foto-upload">🖼️ minha foto de fundo</label><input type="file" id="cal-foto-upload" accept="image/*" hidden><button id="cal-foto-clear" class="soft-action">tirar foto</button></div>
-<footer><button id="theme-reset" class="soft-action">voltar ao padrão</button><button data-close="theme-modal" class="primary-action">pronto ♡</button></footer></section></div>
-<div class="sticker-picker" id="sticker-picker"><div class="sticker-picker-card"><header><b>⋆｡˚ caixinha de adesivos ˚｡⋆</b><button id="sticker-close">✕</button></header><p>toque num adesivo para colar no calendário; depois arraste para seu cantinho ♡</p><div id="sticker-emoji-grid" class="sticker-emoji-grid"></div><label class="soft-action upload-sticker" for="sticker-upload">🖼️ adicionar imagem da galeria</label><input id="sticker-upload" type="file" accept="image/*" hidden></div></div>
-<script src="calendar-style.js"></script><script src="calendar-events.js"></script><script src="calendar.js"></script></body></html>
+<script src="calendar-style.js"></script>
+<script src="calendar-events.js"></script>
+<script src="sticker-manifest.js"></script>
+<script src="planner.js"></script>
+</body>
+</html>
