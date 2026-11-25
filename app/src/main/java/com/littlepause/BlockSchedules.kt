@@ -123,7 +123,7 @@ fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit)
     var overlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
     fun persist() { writeBlockSchedules(prefs, schedules) }
-    val hasDailyLimits = runCatching { JSONArray(prefs.getString("app_daily_limits_json", "{}") ?: "{}").length() > 0 }.getOrDefault(false)
+    val hasDailyLimits = runCatching { JSONObject(prefs.getString("app_daily_limits_json", "{}") ?: "{}").length() > 0 }.getOrDefault(false)
     fun openEditor(schedule: BlockSchedule?) {
         editingId = schedule?.id
         start = schedule?.start ?: "08:00"
