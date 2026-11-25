@@ -123,6 +123,7 @@ fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit)
     var overlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
     fun persist() { writeBlockSchedules(prefs, schedules) }
+    val hasDailyLimits = runCatching { JSONArray(prefs.getString("app_daily_limits_json", "{}") ?: "{}").length() > 0 }.getOrDefault(false)
     fun openEditor(schedule: BlockSchedule?) {
         editingId = schedule?.id
         start = schedule?.start ?: "08:00"
@@ -200,11 +201,11 @@ fun BlockSchedulesCard(isBlocking: Boolean, onToggleBlocking: (Boolean) -> Unit)
                     else if (!overlayAllowed) context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
                     else onToggleBlocking(!isBlocking)
                 },
-                enabled = isBlocking || schedules.any { it.enabled && it.packages.isNotEmpty() },
+                enabled = isBlocking || schedules.any { it.enabled && it.packages.isNotEmpty() } || hasDailyLimits,
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = if (isBlocking) Color(0xFFB99DA7) else ScheduleRose)
             ) { Text(if (isBlocking) "desativar todos os bloqueios" else "ativar bloqueios", color = Color.White) }
-            Text(if (isBlocking) "seus horários estão sendo monitorados ♡" else "cada horário pode ter seus próprios apps, dias e duração",
+            Text(if (isBlocking) "seus horários e limites diários estão sendo monitorados ♡" else "ative para monitorar horários e limites diários",
                 color = ScheduleMuted, fontSize = 10.sp)
         }
     }
