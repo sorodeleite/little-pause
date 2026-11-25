@@ -3,6 +3,18 @@
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
 
+## 0.7.0 — 2026-11-25 · feriados, fitinhas e carinhas
+
+- **feriados de vários países** — no 🎨 você escolhe **Brasil**, **Japão** e **Rússia** (pode marcar
+  os três); os feriados aparecem em vermelho no mês e com o nome no topo do dia. O Brasil já vem
+  marcado, e dá para deixar nenhum também
+- **fitinhas de vários dias** — os eventos de vários dias voltaram a ser aquelas faixas coloridas
+  atravessando a semana, do jeitinho do *little place*; as tarefinhas continuam como linhas
+- **carinhas do iPhone** — as carinhas agora são as da Apple (a mesma fontinha do *little place*),
+  e no 🎨 dá para escolher “iPhone” ou “do aparelho”
+- os feriados do Japão incluem os equinócios, os “happy mondays” e os feriados substitutos
+- o resto continua igual: mês/semana/dia, horários, foto do dia, tema, zoom e adesivos
+
 ## 0.6.0 — 2026-11-25 · jeito jorte
 
 o calendário ganhou o layout do Jorte, com horários e feriados, e os adesivos voltaram a aparecer.

@@ -5,7 +5,13 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const FIXOS = {
+  const PAISES = [
+    { id: 'br', nome: 'Brasil' },
+    { id: 'jp', nome: 'Japão' },
+    { id: 'ru', nome: 'Rússia' }
+  ];
+
+  const BR_FIXOS = {
     '01-01': 'Confraternização Universal',
     '04-21': 'Tiradentes',
     '05-01': 'Dia do Trabalho',
@@ -17,11 +23,48 @@
     '12-25': 'Natal'
   };
 
-  const cache = new Map();
+  const RU_FIXOS = {
+    '01-01': 'Ano Novo',
+    '01-02': 'Férias de Ano Novo',
+    '01-03': 'Férias de Ano Novo',
+    '01-04': 'Férias de Ano Novo',
+    '01-05': 'Férias de Ano Novo',
+    '01-06': 'Férias de Ano Novo',
+    '01-07': 'Natal Ortodoxo',
+    '01-08': 'Férias de Ano Novo',
+    '02-23': 'Dia do Defensor da Pátria',
+    '03-08': 'Dia Internacional da Mulher',
+    '05-01': 'Primavera e Dia do Trabalho',
+    '05-09': 'Dia da Vitória',
+    '06-12': 'Dia da Rússia',
+    '11-04': 'Dia da Unidade Nacional'
+  };
+
+  const JP_FIXOS = {
+    '01-01': 'Ano Novo',
+    '02-11': 'Fundação da Nação',
+    '02-23': 'Aniversário do Imperador',
+    '04-29': 'Dia de Showa',
+    '05-03': 'Dia da Constituição',
+    '05-04': 'Dia do Verde',
+    '05-05': 'Dia das Crianças',
+    '08-11': 'Dia da Montanha',
+    '11-03': 'Dia da Cultura',
+    '11-23': 'Dia do Trabalho e Gratidão'
+  };
+
   const DATA = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const cache = new Map();
 
   function chave(data) {
     return data.getFullYear() + '-' + String(data.getMonth() + 1).padStart(2, '0') + '-' + String(data.getDate()).padStart(2, '0');
+  }
+
+  function dataDe(valor) {
+    const partes = DATA.exec(String(valor || ''));
+    if (!partes) return null;
+    const data = new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]));
+    return Number.isNaN(data.getTime()) ? null : data;
   }
 
   function deslocar(base, dias) {
@@ -46,39 +89,103 @@
     return new Date(ano, mes - 1, dia);
   }
 
-  function doAno(ano) {
-    if (cache.has(ano)) return cache.get(ano);
+  function enesimoDiaDaSemana(ano, mes, diaDaSemana, numero) {
+    const primeiro = new Date(ano, mes, 1);
+    const ajuste = (diaDaSemana - primeiro.getDay() + 7) % 7;
+    return new Date(ano, mes, 1 + ajuste + (numero - 1) * 7);
+  }
+
+  function equinocio(ano, outono) {
+    const base = outono ? 23.2488 : 20.8431;
+    const dia = Math.floor(base + 0.242194 * (ano - 1980) - Math.floor((ano - 1980) / 4));
+    return new Date(ano, outono ? 8 : 2, dia);
+  }
+
+  function mapaBrasil(ano) {
     const mapa = {};
-    Object.keys(FIXOS).forEach(function (mesDia) {
-      mapa[ano + '-' + mesDia] = FIXOS[mesDia];
+    Object.keys(BR_FIXOS).forEach(function (mesDia) {
+      mapa[ano + '-' + mesDia] = BR_FIXOS[mesDia];
     });
     const domingo = pascoa(ano);
     mapa[deslocar(domingo, -47)] = 'Carnaval';
     mapa[deslocar(domingo, -2)] = 'Sexta-feira Santa';
     mapa[deslocar(domingo, 0)] = 'Páscoa';
     mapa[deslocar(domingo, 60)] = 'Corpus Christi';
-    cache.set(ano, mapa);
     return mapa;
   }
 
-  function nome(chaveDaData) {
-    const partes = DATA.exec(String(chaveDaData || ''));
-    if (!partes) return '';
-    const ano = Number(partes[1]);
-    if (ano < 1900 || ano > 2200) return '';
-    const mapa = doAno(ano);
-    return mapa[String(chaveDaData)] || '';
-  }
-
-  function doMes(ano, mes) {
-    const mapa = doAno(Number(ano));
-    const prefixo = Number(ano) + '-' + String(Number(mes)).padStart(2, '0') + '-';
-    const dias = {};
-    Object.keys(mapa).forEach(function (dia) {
-      if (dia.indexOf(prefixo) === 0) dias[dia] = mapa[dia];
+  function mapaRussia(ano) {
+    const mapa = {};
+    Object.keys(RU_FIXOS).forEach(function (mesDia) {
+      mapa[ano + '-' + mesDia] = RU_FIXOS[mesDia];
     });
-    return dias;
+    return mapa;
   }
 
-  return { nome: nome, doAno: doAno, doMes: doMes };
+  function mapaJapao(ano) {
+    const mapa = {};
+    function por(mesDia, nome) {
+      mapa[ano + '-' + mesDia] = nome;
+    }
+    Object.keys(JP_FIXOS).forEach(function (mesDia) {
+      por(mesDia, JP_FIXOS[mesDia]);
+    });
+    mapa[chave(enesimoDiaDaSemana(ano, 0, 1, 2))] = 'Dia da Maioridade';
+    mapa[chave(equinocio(ano, false))] = 'Equinócio de Primavera';
+    mapa[chave(enesimoDiaDaSemana(ano, 6, 1, 3))] = 'Dia do Mar';
+    mapa[chave(enesimoDiaDaSemana(ano, 8, 1, 3))] = 'Dia do Respeito ao Idoso';
+    mapa[chave(equinocio(ano, true))] = 'Equinócio de Outono';
+    mapa[chave(enesimoDiaDaSemana(ano, 9, 1, 2))] = 'Dia do Esporte';
+
+    Object.keys(mapa).sort().forEach(function (dia) {
+      const data = dataDe(dia);
+      if (!data || data.getDay() !== 0) return;
+      let seguinte = new Date(data.getFullYear(), data.getMonth(), data.getDate() + 1);
+      while (mapa[chave(seguinte)]) {
+        seguinte = new Date(seguinte.getFullYear(), seguinte.getMonth(), seguinte.getDate() + 1);
+      }
+      mapa[chave(seguinte)] = 'Feriado substituto';
+    });
+
+    const totalDoAno = new Date(ano, 11, 31);
+    for (let cursor = new Date(ano, 0, 2); cursor <= totalDoAno; cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1)) {
+      const dia = chave(cursor);
+      if (mapa[dia]) continue;
+      const antes = chave(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 1));
+      const depois = chave(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1));
+      if (mapa[antes] && mapa[depois]) mapa[dia] = 'Dia Nacional';
+    }
+    return mapa;
+  }
+
+  function mapaDoPais(id, ano) {
+    const chaveDoCache = id + ':' + ano;
+    if (cache.has(chaveDoCache)) return cache.get(chaveDoCache);
+    let mapa = {};
+    if (id === 'br') mapa = mapaBrasil(ano);
+    else if (id === 'jp') mapa = mapaJapao(ano);
+    else if (id === 'ru') mapa = mapaRussia(ano);
+    cache.set(chaveDoCache, mapa);
+    return mapa;
+  }
+
+  function nomes(valor, paises) {
+    const partes = DATA.exec(String(valor || ''));
+    if (!partes) return [];
+    const ano = Number(partes[1]);
+    if (ano < 1900 || ano > 2200) return [];
+    const escolhidos = Array.isArray(paises) ? paises : ['br'];
+    const lista = [];
+    escolhidos.forEach(function (id) {
+      const nome = mapaDoPais(id, ano)[String(valor)];
+      if (nome && lista.indexOf(nome) === -1) lista.push(nome);
+    });
+    return lista;
+  }
+
+  function nome(valor, paises) {
+    return nomes(valor, paises).join(' · ');
+  }
+
+  return { PAISES: PAISES, nome: nome, nomes: nomes };
 });

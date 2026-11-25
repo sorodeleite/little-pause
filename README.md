@@ -43,12 +43,13 @@ jeito gentil. Então esse aqui é do meu jeitinho.
 - **atualizações pelo próprio app** — como no *sleep my angel*: mostra a versão instalada e a nova, o
   que mudou em cada uma, baixa o APK com barra de progresso e instala por cima, sem desinstalar.
 - **um calendário inteiro** — no jeitinho do *Jorte Calendar*, morando aqui dentro: mês, semana e dia,
-  eventos com horário, feriados brasileiros, tarefinhas coloridas, carinhas, foto do dia e adesivos.
+  eventos com horário, feriados de Brasil, Japão e Rússia, tarefinhas coloridas, carinhas do iPhone,
+  foto do dia e adesivos.
 
 ## o calendário
 
 <p align="center">
-  <img src="docs/readme/calendar.webp" alt="o calendário com tarefinhas, carinhas e adesivos" width="290">
+  <img src="docs/readme/calendar.webp" alt="o calendário com feriados, fitinhas de vários dias e adesivos" width="290">
   &nbsp;&nbsp;
   <img src="docs/readme/stickers.webp" alt="a caixinha de adesivos" width="290">
 </p>
@@ -61,16 +62,19 @@ calendário que eu mais gosto: os quadradinhos, as linhas dos eventos, a régua 
   vermelho e as tarefinhas e eventos como linhas com a bolinha da cor; o que não cabe vira “+N”.
 - **horários** — a semana e o dia têm a régua de 0h a 23h, com os eventos no lugar certinho, a linha
   do agora e a faixa do dia todo no topo. Tocar num espaço vazio da régua já abre o evento naquela hora.
-- **eventos com hora** — “dia inteiro” ou o horário de começar e terminar, com a cor que você escolher;
-  os eventos de vários dias continuam atravessando a semana.
-- **feriados** — os feriados brasileiros (fixos e os de Páscoa) aparecem em vermelho no mês e com o
-  nome no topo do dia.
+- **eventos com hora** — “dia inteiro” ou o horário de começar e terminar, com a cor que você escolher.
+- **fitinhas de vários dias** — viagem, prova, aniversário: o evento vira uma faixa colorida que
+  atravessa a semana, do jeitinho do *little place*.
+- **feriados de vários países** — no 🎨 você marca **Brasil**, **Japão** e/ou **Rússia** (o Brasil já
+  vem marcado). Os feriados aparecem em vermelho no mês e com o nome no topo do dia; os do Japão
+  incluem os equinócios e os feriados substitutos.
 - **tarefinhas** — cada linha vira uma fitinha colorida no dia.
-- **carinhas do dia** — um emoji para marcar o clima daquele dia.
+- **carinhas do dia** — um emoji para marcar o clima daquele dia, no desenho do iPhone (ou do aparelho,
+  se você escolher no 🎨).
 - **foto do dia** — uma fotinha preenche o quadradinho do dia.
 - **meu calendário 🎨** — fundo (bolinhas, nuvens, xadrez, papel, a sua própria foto), estilo dos
-  quadradinhos, cor de cada detalhe, sete letras diferentes e o numerinho do lado (dia do ano, semana,
-  data curtinha).
+  quadradinhos, cor de cada detalhe, sete letras diferentes, o numerinho do lado (dia do ano, semana,
+  data curtinha), os feriados e as carinhas.
 - **caixinha de adesivos 🎀** — 899 adesivos guardados no próprio APK, em categorias
   (lacinhos, natureza, pelúcias, comidinhas, rendinhas…). Toca para colar, arrasta para o cantinho,
   gira e aumenta nas bolinhas. Ele também aceita uma imagem da galeria.
@@ -138,6 +142,7 @@ app/src/main/
   assets/calendar/
     index.html · planner.js · calendar.css · calendar-jorte.css
     calendar-style.js · calendar-events.js · calendar-holidays.js
+    emoji/apple-emoji.css · emoji/apple-emoji.ttf
     fonts/ · stickers/ · sticker-manifest.js
 CHANGELOG.md
 ```
@@ -149,7 +154,7 @@ CHANGELOG.md
 3. faça commit e push na `main`.
 
 O workflow **Android build** monta o APK assinado, confere a assinatura e, se a tag daquela versão ainda
-não existir, publica sozinho o release `v0.6.0` com o arquivo `little-pause.apk` — exatamente o nome que
+não existir, publica sozinho o release `v0.7.0` com o arquivo `little-pause.apk` — exatamente o nome que
 o app procura quando você toca em “baixar atualização”. Se a versão já tiver release, ele só guarda o
 APK como artefato e não publica nada de novo.
 

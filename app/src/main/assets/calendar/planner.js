@@ -10,9 +10,16 @@
   const PHOTO_KEY = 'lp_cal_photos';
   const STICKER_KEY = 'lp_cal_stickers';
   const ZOOM_KEY = 'lp_cal_zoom';
+  const HOLIDAY_KEY = 'lp_cal_holidays';
+  const EMOJI_KEY = 'lp_cal_emoji';
   const TASKS_MIGRATED_KEY = 'lp_cal_tasks_migrated';
   const HOUR = 46;
   const MAX_LINES = 3;
+
+  const EMOJI_FAMILIES = {
+    iphone: "'Pooftie Apple Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif",
+    aparelho: "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', sans-serif"
+  };
 
   const MONTHS = [
     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -56,6 +63,8 @@
     photos: readObject(PHOTO_KEY),
     stickers: [],
     zoom: readZoom(),
+    holidays: readHolidays(),
+    emoji: readEmojiMode(),
     style: Style ? Style.ler(localStorage) : null,
     eventColor: (Events && Events.CORES[0]) || '#f9c8d7',
     draft: null,
@@ -178,6 +187,34 @@
     }
   }
 
+  function readHolidays() {
+    try {
+      const raw = localStorage.getItem(HOLIDAY_KEY);
+      if (raw == null) return ['br'];
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list)) return ['br'];
+      if (!Holidays) return [];
+      return list.filter(function (id) {
+        return Holidays.PAISES.some(function (pais) { return pais.id === id; });
+      });
+    } catch (error) {
+      return ['br'];
+    }
+  }
+
+  function readEmojiMode() {
+    try {
+      return localStorage.getItem(EMOJI_KEY) === 'aparelho' ? 'aparelho' : 'iphone';
+    } catch (error) {
+      return 'iphone';
+    }
+  }
+
+  function applyEmojiStyle() {
+    const familia = EMOJI_FAMILIES[state.emoji] || EMOJI_FAMILIES.iphone;
+    document.documentElement.style.setProperty('--fonte-emoji', familia);
+  }
+
   function noteLines(text) {
     return Style ? Style.linhasDaNota(text) : String(text || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
   }
@@ -197,7 +234,7 @@
   }
 
   function holidayName(key) {
-    return Holidays ? Holidays.nome(key) : '';
+    return Holidays ? Holidays.nome(key, state.holidays) : '';
   }
 
   function shortDate(key) {
@@ -365,6 +402,10 @@
       + '        </label>'
       + '        <label class="cal-switch"><input type="checkbox" id="cal-domingo-vermelho"><span>domingo vermelho</span></label>'
       + '      </div>'
+      + '      <p class="cal-theme-label">feriados</p>'
+      + '      <div class="cal-theme-chips" id="cal-holiday-grid" role="group" aria-label="feriados"></div>'
+      + '      <p class="cal-theme-label">carinhas</p>'
+      + '      <div class="cal-theme-chips" id="cal-emoji-grid" role="radiogroup" aria-label="estilo das carinhas"></div>'
       + '      <p class="cal-theme-hint">a foto do fundo fica guardada dentro do app (bem pequenininha). os adesivinhos continuam soltos por cima, do jeitinho que você colar ♡</p>'
       + '    </div>'
       + '    <div class="cal-theme-foot">'
@@ -399,6 +440,7 @@
     state.selected = todayKey();
     state.today = todayKey();
     state.style = Style.ler(localStorage);
+    applyEmojiStyle();
     state.stickers = readArray(STICKER_KEY).map(migrateSticker).map(normalizeSticker).filter(Boolean);
     state.zCounter = state.stickers.reduce(function (max, item) { return Math.max(max, item.z || 0); }, 20);
     root.classList.add('planner-cal');
@@ -420,6 +462,7 @@
           if (state.resizeRaf) return;
           state.resizeRaf = requestAnimationFrame(function () {
             state.resizeRaf = 0;
+            positionMonthBars();
             clampStickers();
           });
         });
@@ -427,7 +470,7 @@
       }
     }
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { window.setTimeout(clampStickers, 0); }).catch(function () {});
+      document.fonts.ready.then(function () { window.setTimeout(function () { positionMonthBars(); clampStickers(); }, 0); }).catch(function () {});
     }
     window.addEventListener('resize', onViewportChange);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', onViewportChange);
@@ -439,6 +482,7 @@
     if (state.resizeRaf) cancelAnimationFrame(state.resizeRaf);
     state.resizeRaf = requestAnimationFrame(function () {
       state.resizeRaf = 0;
+      positionMonthBars();
       clampStickers();
     });
   }
@@ -525,6 +569,9 @@
     const bar = event.target.closest('.cal-bar');
     if (bar) return openDay(bar.dataset.date);
 
+    const monthBar = event.target.closest('.cal-month-bar');
+    if (monthBar) return openDay(monthBar.dataset.date);
+
     const col = event.target.closest('.cal-col');
     if (col) {
       const rect = col.getBoundingClientRect();
@@ -543,6 +590,16 @@
     if (quadro) {
       changeTheme({ quadros: quadro.dataset.quadro });
       renderTheme();
+      return;
+    }
+    const holiday = event.target.closest('[data-holiday]');
+    if (holiday) {
+      toggleHoliday(holiday.dataset.holiday);
+      return;
+    }
+    const emojiMode = event.target.closest('[data-emoji-mode]');
+    if (emojiMode) {
+      setEmojiMode(emojiMode.dataset.emojiMode);
       return;
     }
     const cat = event.target.closest('[data-st-cat]');
@@ -749,11 +806,6 @@
       .forEach(function (evento) {
         list.push({ titulo: evento.titulo, cor: evento.cor, hora: evento.hora, tipo: 'evento' });
       });
-    doDia.filter(function (evento) { return !evento.hora; })
-      .sort(function (a, b) { return a.titulo.localeCompare(b.titulo); })
-      .forEach(function (evento) {
-        list.push({ titulo: evento.titulo, cor: evento.cor, hora: '', tipo: 'evento' });
-      });
     noteLines(state.notes[key]).forEach(function (title, index) {
       list.push({ titulo: title, cor: Style.corDaTarefa(state.style, index), hora: '', tipo: 'tarefa' });
     });
@@ -810,14 +862,18 @@
         tiny.textContent = mini;
         top.appendChild(tiny);
       }
-      cell.appendChild(top);
+
+      const topBox = document.createElement('span');
+      topBox.className = 'cal-cell-head';
+      topBox.appendChild(top);
 
       if (holiday) {
         const label = document.createElement('span');
         label.className = 'cal-holiday';
         label.textContent = holiday;
-        cell.appendChild(label);
+        topBox.appendChild(label);
       }
+      cell.appendChild(topBox);
 
       const entries = dayEntries(key, holiday ? 2 : MAX_LINES);
       if (entries.visible.length) {
@@ -861,6 +917,101 @@
 
     grid.innerHTML = '';
     grid.appendChild(fragment);
+    positionMonthBars();
+  }
+
+  function monthFaixas() {
+    return events().filter(function (evento) {
+      return !evento.hora;
+    }).map(function (evento, index) {
+      return {
+        id: 'evento:' + evento.id,
+        idEvento: evento.id,
+        titulo: evento.titulo,
+        cor: evento.cor,
+        textoCor: Events.corDeTexto(evento.cor),
+        inicio: evento.inicio,
+        fim: evento.fim,
+        tipo: 'evento',
+        ordem: index
+      };
+    });
+  }
+
+  function positionMonthBars() {
+    const grid = root.querySelector('#cal-grid');
+    if (!grid) return;
+    const old = grid.querySelector('.cal-bars-layer');
+    if (old) old.remove();
+    const cells = Array.prototype.slice.call(grid.querySelectorAll('.cal-cell'));
+    if (!cells.length) return;
+
+    const dates = cells.map(function (cell) { return cell.dataset.date; });
+    const grade = Events.montarGrade({ dias: dates, faixas: monthFaixas() });
+    const step = Math.max(12, Math.min(18, Math.round((grid.clientWidth || 380) * 0.032)));
+    const altura = Math.max(8, step - 3);
+    grid.style.setProperty('--bar-step', step + 'px');
+    cells.forEach(function (cell) { cell.style.setProperty('--bars', '0'); });
+    if (!grade || !grade.semanas) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'cal-bars-layer';
+
+    grade.semanas.forEach(function (week, weekIndex) {
+      const lanes = week.totalFaixas || 0;
+      for (let coluna = 0; coluna < 7; coluna += 1) {
+        const cell = cells[weekIndex * 7 + coluna];
+        if (cell) cell.style.setProperty('--bars', String(lanes));
+      }
+
+      const grupos = [];
+      const grupoDaFaixa = new Map();
+      for (let coluna = 0; coluna < 7; coluna += 1) {
+        (week.celulas[coluna] || []).forEach(function (segmento) {
+          const anterior = grupoDaFaixa.get(segmento.id);
+          if (anterior && anterior.colFim === coluna - 1) {
+            anterior.colFim = coluna;
+          } else {
+            const grupo = { segmento: segmento, colInicio: coluna, colFim: coluna };
+            grupos.push(grupo);
+            grupoDaFaixa.set(segmento.id, grupo);
+          }
+        });
+      }
+
+      grupos.forEach(function (grupo) {
+        const celulaInicio = cells[weekIndex * 7 + grupo.colInicio];
+        const celulaFim = cells[weekIndex * 7 + grupo.colFim];
+        if (!celulaInicio || !celulaFim) return;
+        const segmento = grupo.segmento;
+        const topo = celulaInicio.querySelector('.cal-cell-head');
+        const base = (topo ? topo.offsetTop + topo.offsetHeight : 18) + 2;
+        const top = celulaInicio.offsetTop + base + (segmento.lane - 1) * step;
+        const esquerda = Math.max(0, celulaInicio.offsetLeft + (segmento.comecaAqui ? 1 : 0));
+        const direita = celulaFim.offsetLeft + celulaFim.offsetWidth - (segmento.terminaAqui ? 1 : 0);
+
+        const barra = document.createElement('button');
+        barra.type = 'button';
+        barra.className = 'cal-month-bar'
+          + (segmento.comecaAqui ? ' is-start' : '')
+          + (segmento.terminaAqui ? ' is-end' : '');
+        barra.dataset.date = segmento.inicio;
+        barra.style.setProperty('--c', segmento.cor);
+        barra.style.setProperty('--t', segmento.textoCor);
+        barra.style.top = top + 'px';
+        barra.style.left = esquerda + 'px';
+        barra.style.width = Math.max(6, direita - esquerda) + 'px';
+        barra.style.height = altura + 'px';
+        barra.textContent = segmento.mostrarTitulo ? segmento.titulo : '';
+        barra.title = segmento.inicio === segmento.fim
+          ? segmento.titulo
+          : segmento.titulo + ' · ' + shortDate(segmento.inicio) + ' – ' + shortDate(segmento.fim);
+        barra.setAttribute('aria-label', barra.title);
+        layer.appendChild(barra);
+      });
+    });
+
+    grid.appendChild(layer);
   }
 
   function renderWeek() {
@@ -1274,6 +1425,7 @@
     state.zoom = clamp(Math.round(value * 100) / 100, 0.75, 1.25);
     applyStyle();
     try { localStorage.setItem(ZOOM_KEY, String(state.zoom)); } catch (error) { }
+    requestAnimationFrame(positionMonthBars);
   }
 
   function openTheme() {
@@ -1290,6 +1442,28 @@
     Style.guardar(localStorage, state.style);
     applyStyle();
     if (redraw !== false) render();
+  }
+
+  function toggleHoliday(id) {
+    if (!Holidays) return;
+    const existe = Holidays.PAISES.some(function (pais) { return pais.id === id; });
+    if (!existe) return;
+    const index = state.holidays.indexOf(id);
+    if (index === -1) state.holidays.push(id);
+    else state.holidays.splice(index, 1);
+    state.holidays = Holidays.PAISES.filter(function (pais) {
+      return state.holidays.indexOf(pais.id) !== -1;
+    }).map(function (pais) { return pais.id; });
+    try { localStorage.setItem(HOLIDAY_KEY, JSON.stringify(state.holidays)); } catch (error) { }
+    render();
+    renderTheme();
+  }
+
+  function setEmojiMode(mode) {
+    state.emoji = mode === 'aparelho' ? 'aparelho' : 'iphone';
+    applyEmojiStyle();
+    try { localStorage.setItem(EMOJI_KEY, state.emoji); } catch (error) { }
+    renderTheme();
   }
 
   function renderTheme() {
@@ -1317,6 +1491,25 @@
     root.querySelector('#cal-paleta-select').value = style.paleta;
     root.querySelector('#cal-domingo-vermelho').checked = style.domingoVermelho;
     root.querySelector('#cal-bg-clear').hidden = !style.foto;
+
+    const holidayGrid = root.querySelector('#cal-holiday-grid');
+    if (holidayGrid) {
+      holidayGrid.innerHTML = (Holidays ? Holidays.PAISES : []).map(function (pais) {
+        const chosen = state.holidays.indexOf(pais.id) !== -1;
+        return '<button class="cal-theme-chip' + (chosen ? ' is-chosen' : '') + '" type="button" data-holiday="' + pais.id + '" aria-pressed="' + (chosen ? 'true' : 'false') + '">' + pais.nome + '</button>';
+      }).join('');
+    }
+
+    const emojiGrid = root.querySelector('#cal-emoji-grid');
+    if (emojiGrid) {
+      emojiGrid.innerHTML = [
+        { id: 'iphone', nome: 'iPhone' },
+        { id: 'aparelho', nome: 'do aparelho' }
+      ].map(function (modo) {
+        const chosen = state.emoji === modo.id;
+        return '<button class="cal-theme-chip' + (chosen ? ' is-chosen' : '') + '" type="button" data-emoji-mode="' + modo.id + '" aria-pressed="' + (chosen ? 'true' : 'false') + '">' + modo.nome + '</button>';
+      }).join('');
+    }
   }
 
   async function useThemePhoto(input) {

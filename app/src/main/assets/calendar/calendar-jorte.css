@@ -1,3 +1,7 @@
+:root {
+  --fonte-emoji: 'Pooftie Apple Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+
 #planner-root {
   --cal-zoom: 1;
   --cal-linha-sabado: #4a78b8;
@@ -12,7 +16,7 @@
   overflow: hidden;
   background: #fffdfc;
   color: var(--cal-texto);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
 }
 
 #planner-root *,
@@ -64,7 +68,7 @@ body {
   border-radius: 8px;
   background: transparent;
   color: #857a76;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
@@ -82,7 +86,7 @@ body {
   padding: 0 3px;
   overflow: hidden;
   color: #4a3f3b;
-  font-family: var(--cal-fonte);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
@@ -105,7 +109,7 @@ body {
   border-radius: 999px;
   background: #ffffff;
   color: #7d6a62;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
@@ -153,7 +157,7 @@ body {
   border: 0;
   background: transparent;
   color: #9a8d87;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -195,7 +199,7 @@ body {
   border-radius: 50%;
   background: #fff;
   color: #8b756c;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -245,7 +249,7 @@ body {
   padding: 5px 0 4px;
   overflow: hidden;
   color: #948a86;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -338,6 +342,45 @@ body {
   z-index: 2;
 }
 
+.cal-bars-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cal-month-bar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 2px;
+  background: var(--c, #f9c8d7);
+  color: var(--t, #4a3a34);
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: left;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 1px rgba(90, 70, 60, 0.08);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.cal-month-bar.is-start {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.cal-month-bar.is-end {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
 .cal-cell.is-out {
   opacity: 0.42;
 }
@@ -360,6 +403,16 @@ body {
   z-index: 3;
 }
 
+.cal-cell-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  height: calc(31px * var(--cal-zoom));
+  overflow: hidden;
+}
+
 .cal-num-row {
   position: relative;
   z-index: 1;
@@ -367,7 +420,7 @@ body {
   align-items: center;
   gap: 3px;
   min-width: 0;
-  min-height: 18px;
+  min-height: calc(18px * var(--cal-zoom));
   line-height: 1;
 }
 
@@ -375,6 +428,7 @@ body {
   text-shadow: 0 1px 0 #fff, 0 0 4px rgba(255, 255, 255, 0.95);
 }
 
+.cal-cell.photo-front .cal-cell-head,
 .cal-cell.photo-front .cal-num-row,
 .cal-cell.photo-front .cal-lines,
 .cal-cell.photo-front .cal-holiday {
@@ -390,7 +444,7 @@ body {
   padding: 0 2px;
   border-radius: 999px;
   color: var(--cal-texto);
-  font-family: var(--cal-fonte);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: calc(12.5px * var(--cal-zoom));
   font-weight: 700;
   line-height: 1;
@@ -430,7 +484,7 @@ body {
   padding-top: 1px;
   overflow: hidden;
   color: var(--cal-texto);
-  font-family: var(--cal-fonte);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: calc(7.5px * var(--cal-zoom));
   line-height: 1;
   opacity: 0.35;
@@ -440,10 +494,10 @@ body {
 .cal-holiday {
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
   overflow: hidden;
-  margin-top: -1px;
   color: #d94a63;
-  font-family: var(--cal-fonte);
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: calc(7.5px * var(--cal-zoom));
   font-weight: 700;
   line-height: 1.2;
@@ -457,7 +511,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  margin-top: 1px;
+  margin-top: calc(var(--bars, 0) * var(--bar-step, 14px) + 1px);
   overflow: hidden;
 }
 
@@ -466,7 +520,7 @@ body {
   align-items: center;
   gap: 3px;
   min-width: 0;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: calc(9px * var(--cal-zoom));
   font-weight: 600;
   line-height: 1.4;
@@ -545,7 +599,7 @@ body {
 
 .cal-week-day small {
   color: #9a8d87;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -560,7 +614,7 @@ body {
   padding: 0 2px;
   border-radius: 999px;
   color: #4a3f3b;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 12.5px;
   font-weight: 800;
 }
@@ -605,7 +659,7 @@ body {
   padding: 2px 3px;
   overflow: hidden;
   color: #a2948e;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 6px;
   font-weight: 800;
   line-height: 1;
@@ -631,7 +685,7 @@ body {
   border-radius: 3px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 8px;
   font-weight: 700;
   line-height: 15px;
@@ -655,7 +709,7 @@ body {
   border-radius: 9px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 8.5px;
   font-weight: 700;
   cursor: pointer;
@@ -664,7 +718,7 @@ body {
 .cal-day-empty {
   padding: 2px 0;
   color: #b3a59f;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 8.5px;
 }
 
@@ -685,14 +739,14 @@ body {
 
 .cal-day-date b {
   color: #4a3f3b;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 14px;
   font-weight: 800;
 }
 
 .cal-day-date span {
   color: #8b7f7a;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 10.5px;
   font-weight: 600;
 }
@@ -700,7 +754,7 @@ body {
 .cal-day-feriado {
   margin: 2px 0 0;
   color: #d94a63;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 9px;
   font-weight: 800;
 }
@@ -729,7 +783,7 @@ body {
   position: absolute;
   right: 4px;
   color: #a89b95;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 8px;
   font-weight: 700;
   line-height: 1;
@@ -783,7 +837,7 @@ body {
   border-radius: 3px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 7.5px;
   font-weight: 700;
   line-height: 1.25;
@@ -839,7 +893,7 @@ body {
   border-radius: 50%;
   background: var(--cal-domingo-cor);
   color: #ffffff;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 25px;
   font-weight: 700;
   line-height: 1;
@@ -854,10 +908,35 @@ body {
 .cal-day-holiday {
   margin: -3px 0 7px;
   color: #d94a63;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 9.5px;
   font-weight: 800;
   text-align: center;
+}
+
+.cal-theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cal-theme-chip {
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1.5px solid var(--accent-taupe-soft);
+  border-radius: 999px;
+  background: #fff;
+  color: #a08f87;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-size: 9.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cal-theme-chip.is-chosen {
+  border-color: #cf8f9f;
+  background: #fff0f5;
+  color: #8b4a5f;
 }
 
 .cal-time-field {
@@ -865,7 +944,7 @@ body {
   align-items: center;
   gap: 4px;
   color: #a08f87;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 9.5px;
   font-weight: 800;
 }
@@ -877,7 +956,7 @@ body {
   border-radius: 9px;
   background: #fff;
   color: var(--text-chocolate);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
   font-size: 10.5px;
   font-weight: 700;
 }
