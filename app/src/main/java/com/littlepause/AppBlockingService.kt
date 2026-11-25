@@ -28,6 +28,9 @@ class AppBlockingService : Service() {
     private var foregroundPackage: String? = null
     private var lastQueryTime = 0L
     private var temporarilyAllowedUntil = 0L
+    private var lastUsageAccountedAt = 0L
+    private var usageDay = ""
+    private val dailyUsageMillis = mutableMapOf<String, Long>()
 
     private val checkForeground = object : Runnable {
         override fun run() {
@@ -42,6 +45,8 @@ class AppBlockingService : Service() {
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
         lastQueryTime = System.currentTimeMillis() - 15_000
+        lastUsageAccountedAt = System.currentTimeMillis()
+        loadDailyUsage()
         handler.post(checkForeground)
     }
 
@@ -76,6 +81,7 @@ class AppBlockingService : Service() {
             }
         }
         lastQueryTime = now
+        accountForegroundTime(now)
 
         val activePackage = foregroundPackage
         val hasNewSchedules = runCatching {
@@ -86,11 +92,47 @@ class AppBlockingService : Service() {
         val legacyScheduleAllows = !prefs.getBoolean("schedule_enabled", false) || isWithinSchedule(prefs, now)
         val legacyShouldBlock = !hasNewSchedules && legacyScheduleAllows &&
             activePackage != null && activePackage in legacyApps
-        val shouldBlock = now >= temporarilyAllowedUntil &&
-            activePackage != null && activePackage != packageName &&
-            (if (hasNewSchedules) scheduledForThisApp else legacyShouldBlock)
+        val dailyLimitReached = activePackage != null && activePackage != packageName && isDailyLimitReached(prefs, activePackage)
+        val shouldBlock = now >= temporarilyAllowedUntil && activePackage != null && activePackage != packageName &&
+            (dailyLimitReached || (if (hasNewSchedules) scheduledForThisApp else legacyShouldBlock))
 
         if (shouldBlock) showPauseScreen() else hidePauseScreen()
+    }
+
+
+    private fun loadDailyUsage() {
+        val prefs = getSharedPreferences("little_pause", MODE_PRIVATE)
+        val today = java.time.LocalDate.now().toString()
+        usageDay = prefs.getString("app_daily_usage_day", today) ?: today
+        if (usageDay != today) {
+            usageDay = today; dailyUsageMillis.clear()
+            prefs.edit().putString("app_daily_usage_day", today).putString("app_daily_usage_json", "{}").apply()
+            return
+        }
+        val saved = runCatching { org.json.JSONObject(prefs.getString("app_daily_usage_json", "{}") ?: "{}") }.getOrNull() ?: org.json.JSONObject()
+        dailyUsageMillis.clear()
+        val keys = saved.keys()
+        while (keys.hasNext()) { val key = keys.next(); dailyUsageMillis[key] = saved.optLong(key, 0L).coerceAtLeast(0L) }
+    }
+
+    private fun accountForegroundTime(now: Long) {
+        val today = java.time.Instant.ofEpochMilli(now).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+        if (today != usageDay) { usageDay = today; dailyUsageMillis.clear() }
+        val elapsed = if (lastUsageAccountedAt > 0L) (now - lastUsageAccountedAt).coerceIn(0L, 2_000L) else 0L
+        val active = foregroundPackage
+        if (elapsed > 0L && active != null && active != packageName) dailyUsageMillis[active] = (dailyUsageMillis[active] ?: 0L) + elapsed
+        lastUsageAccountedAt = now
+        if (elapsed > 0L) {
+            val json = org.json.JSONObject()
+            dailyUsageMillis.forEach { (pkg, millis) -> json.put(pkg, millis) }
+            getSharedPreferences("little_pause", MODE_PRIVATE).edit().putString("app_daily_usage_day", usageDay).putString("app_daily_usage_json", json.toString()).apply()
+        }
+    }
+
+    private fun isDailyLimitReached(prefs: android.content.SharedPreferences, appPackage: String): Boolean {
+        val limits = runCatching { org.json.JSONObject(prefs.getString("app_daily_limits_json", "{}") ?: "{}") }.getOrNull() ?: return false
+        val minutes = limits.optInt(appPackage, 0)
+        return minutes > 0 && (dailyUsageMillis[appPackage] ?: 0L) >= minutes * 60_000L
     }
 
     private fun isScheduledForPackage(
