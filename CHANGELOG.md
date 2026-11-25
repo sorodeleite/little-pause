@@ -11,6 +11,7 @@ o calendário do little place veio morar aqui, com tudo que ele tinha direito.
   (fundo, quadradinhos, cores, sete letras e o numerinho do lado) e zoom
 - **899 adesivos** guardados dentro do app, em categorias, para colar, arrastar, girar e aumentar
 - **atualizações pelo próprio app** — mostra a versão nova, o que mudou, baixa e instala por cima
+  (e depois que você instala, ela não fica mais pedindo pra instalar de novo)
 - **a pausa não se deixa cortar** — serviço em primeiro plano, cartão para liberar a bateria, volta
   sozinha depois de reiniciar e um lembrete a cada 15 minutos
 - **mas sem virar coleira** — respiro de 15 segundos antes dos botões, cada fuga aumenta o respiro da

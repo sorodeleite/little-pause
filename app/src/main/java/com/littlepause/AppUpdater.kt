@@ -54,7 +54,9 @@ data class UpdateState(
     val checkedAt: Long = 0L
 ) {
     val downloaded: Boolean
-        get() = downloadedVersion.isNotEmpty() && downloadedVersion == latestVersion
+        get() = downloadedVersion.isNotEmpty() &&
+            downloadedVersion == latestVersion &&
+            currentVersion != latestVersion
 }
 
 /**
@@ -79,7 +81,11 @@ object AppUpdater {
     fun refreshInstalled(context: Context) {
         val prefs = context.getSharedPreferences(UPDATER_PREFS, Context.MODE_PRIVATE)
         val version = currentVersion(context)
-        val savedDownload = prefs.getString(KEY_DOWNLOAD_VERSION, "") ?: ""
+        var savedDownload = prefs.getString(KEY_DOWNLOAD_VERSION, "") ?: ""
+        if (savedDownload.isNotEmpty() && compareVersions(savedDownload, version) <= 0) {
+            prefs.edit().remove(KEY_DOWNLOAD_VERSION).remove(KEY_DOWNLOAD_ID).apply()
+            savedDownload = ""
+        }
         state.value = state.value.copy(
             currentVersion = version,
             downloadedVersion = savedDownload,
@@ -170,7 +176,7 @@ object AppUpdater {
         id: Long,
         version: String
     ) {
-        repeat(900) {
+        repeat(4500) {
             delay(400)
             val status = runCatching { downloadStatus(manager, id) }.getOrNull() ?: return@repeat
             when {
