@@ -67,6 +67,7 @@ class AppBlockingService : Service() {
 
         val now = System.currentTimeMillis()
         val usageStats = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+        accountForegroundTime(now)
         val events = usageStats.queryEvents(lastQueryTime, now)
         if (events != null) {
             val event = UsageEvents.Event()
@@ -81,7 +82,6 @@ class AppBlockingService : Service() {
             }
         }
         lastQueryTime = now
-        accountForegroundTime(now)
 
         val activePackage = foregroundPackage
         val hasNewSchedules = runCatching {
