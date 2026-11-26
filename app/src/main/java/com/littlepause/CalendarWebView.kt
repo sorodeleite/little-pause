@@ -105,16 +105,11 @@ fun CalendarView(
                     ): Boolean {
                         pendingFile[0]?.onReceiveValue(null)
                         pendingFile[0] = filePathCallback
-                        // o mesmo seletor serve para fotos e para a fonte da pessoa
+                        // o mesmo seletor serve para fotos e para a fonte da pessoa.
+                        // o WebView do Android não entende extensão no accept, então
+                        // quando não é imagem a gente abre o seletor de arquivos geral.
                         val accept = fileChooserParams?.acceptTypes?.joinToString("|")?.lowercase().orEmpty()
-                        val mime = when {
-                            accept.contains("font") ||
-                                accept.contains(".ttf") ||
-                                accept.contains(".otf") ||
-                                accept.contains(".woff") -> "*/*"
-                            accept.contains("image") || accept.isBlank() -> "image/*"
-                            else -> "*/*"
-                        }
+                        val mime = if (accept.contains("image")) "image/*" else "*/*"
                         filePicker.launch(mime)
                         return true
                     }

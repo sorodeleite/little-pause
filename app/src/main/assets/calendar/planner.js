@@ -395,7 +395,7 @@
       + '          <select id="cal-fonte-select">' + Object.keys(FONTE_NOMES).map(function (key) { return '<option value="' + key + '">' + FONTE_NOMES[key] + '</option>'; }).join('') + '</select>'
       + '        </label>'
       + '        <label class="cal-mini-btn cal-font-upload" for="cal-font-file" title="escolher uma fonte do celular">🔤 minha fonte</label>'
-      + '        <input type="file" id="cal-font-file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" hidden>'
+      + '        <input type="file" id="cal-font-file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/x-font-ttf,application/x-font-otf,application/font-woff" hidden>'
       + '      </div>'
       + '      <div class="cal-theme-row">'
       + '        <label class="cal-theme-field wide" for="cal-mini-select">numerinho do lado'

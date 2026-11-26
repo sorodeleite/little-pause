@@ -5,6 +5,12 @@
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
 
+## 0.7.3 — 2026-11-26 · a fonte escolhida abre direitinho
+
+- o botão **🔤 minha fonte** agora abre o seletor de arquivos do Android, e não só a galeria de
+  fotos; dá para escolher .ttf, .otf, .woff e .woff2 sem susto
+- a fonte continua guardada dentro do app e volta sozinha depois de fechar
+
 ## 0.7.2 — 2026-11-26 · a letra do jorte e os cartões arrumadinhos
 
 - **a letra do jorte** — o calendário inteiro agora usa a mesma letra do Jorte Calendar
