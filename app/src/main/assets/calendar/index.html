@@ -15,6 +15,7 @@
 <div id="lp-boot-error" role="status" hidden>
   <strong>não consegui abrir o calendário</strong>
   <span id="lp-boot-error-detail">recarregue a tela e tente de novo ♡</span>
+  <button type="button" onclick="location.reload()">abrir de novo ♡</button>
 </div>
 <script>
 (function () {
@@ -36,6 +37,13 @@
     var reason = event && event.reason;
     show(reason && reason.message ? reason.message : 'erro inesperado');
   });
+  /* se nada apareceu depois de alguns segundos, não deixa a tela branca:
+     mostra o recadinho com o botão de abrir de novo */
+  window.setTimeout(function () {
+    if (box && box.hidden && !document.querySelector('.cal-cell')) {
+      show('o calendário demorou pra abrir. tenta abrir de novo ♡');
+    }
+  }, 5000);
 })();
 </script>
 <script src="calendar-style.js"></script>

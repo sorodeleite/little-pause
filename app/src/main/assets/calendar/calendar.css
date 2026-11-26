@@ -1,7 +1,7 @@
 /* ── calendário (estilo little place) ─────────────────────── */
 
 #planner-root {
-  --cal-fonte: 'Gowun Batang', Georgia, 'Times New Roman', serif;
+  --cal-fonte: 'Roboto Condensed', 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
   --cal-fundo: #ffffff;
   --cal-celula: #ffffff;
   --cal-celula-cheia: #ffffff;
@@ -32,7 +32,7 @@
 #planner-root .planner-error {
   padding: 60px 18px;
   color: #8b756c;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 12px;
   line-height: 1.7;
   text-align: center;
@@ -101,7 +101,7 @@
   border-radius: 999px;
   background: #ffffff;
   color: var(--cal-domingo-cor);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif, sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -290,6 +290,10 @@
 
 #planner-root .cal-day-photo {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -317,6 +321,10 @@
 
 #planner-root .cal-days-overlay {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 3;
   pointer-events: none;
@@ -420,12 +428,19 @@
 
 #planner-root .cal-modal {
   position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 1200;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 18px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 #planner-root .cal-modal.is-open {
@@ -434,6 +449,10 @@
 
 #planner-root .cal-modal-backdrop {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   background: rgba(70, 53, 41, 0.4);
   backdrop-filter: blur(3px);
@@ -442,9 +461,14 @@
 #planner-root .cal-modal-card {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 380px;
   width: min(100%, 380px);
+  max-height: 92vh;
   max-height: min(92dvh, 780px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: #fffdfa;
   border: 2px solid var(--accent-taupe-soft);
   border-radius: 22px;
@@ -471,13 +495,14 @@
   border-radius: 50%;
   background: #fff;
   color: var(--accent-taupe-deep);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
 }
 
 #planner-root .cal-day-card {
+  min-height: 70vh;
   min-height: min(70dvh, 560px);
   padding: 16px 16px 14px;
 }
@@ -494,17 +519,18 @@
 
 #planner-root .cal-day-title {
   margin: 0;
-  font-family: 'Patrick Hand', var(--cal-fonte), var(--fonte-emoji), cursive;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 700;
   text-align: center;
   color: var(--text-chocolate);
 }
 
 #planner-root .cal-day-date {
-  margin: 1px 0 9px;
-  font-family: 'Caveat', var(--cal-fonte), var(--fonte-emoji), cursive;
-  font-size: 16px;
+  margin: 0 0 6px;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: 13.5px;
+  font-weight: 700;
   text-align: center;
   color: var(--accent-taupe-deep);
 }
@@ -512,26 +538,26 @@
 #planner-root .cal-day-hint,
 #planner-root .cal-event-hint,
 #planner-root .cal-theme-hint {
-  margin: 0 0 7px;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  margin: 0 0 5px;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
-  line-height: 1.55;
+  line-height: 1.45;
   color: #a3958c;
   text-align: center;
 }
 
 #planner-root .cal-day-notes {
   width: 100%;
-  min-height: 92px;
-  padding: 8px 10px;
+  min-height: 76px;
+  padding: 7px 9px;
   border: 1.5px dashed var(--accent-taupe);
   border-radius: 14px;
   outline: none;
   background: #fffdfc;
   color: var(--text-chocolate);
-  font-family: 'Caveat', var(--cal-fonte), var(--fonte-emoji), cursive;
-  font-size: 18px;
-  line-height: 24px;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
+  font-size: 15px;
+  line-height: 21px;
   resize: none;
 }
 
@@ -550,20 +576,20 @@
 
 #planner-root .cal-day-preview-empty {
   padding: 2px 0;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   color: #b6a9a1;
 }
 
 #planner-root .cal-section {
-  margin-top: 9px;
-  padding-top: 9px;
+  margin-top: 7px;
+  padding-top: 7px;
   border-top: 1.5px dashed #f0e4e8;
 }
 
 #planner-root .cal-section-title {
   margin: 0 0 6px;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -578,13 +604,13 @@
 }
 
 #planner-root .cal-reaction {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 7px;
+  min-width: 32px;
+  height: 31px;
+  padding: 0 6px;
   border: 1.5px solid var(--accent-taupe-soft);
   border-radius: 11px;
   background: #fff;
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
@@ -596,7 +622,7 @@
 }
 
 #planner-root .cal-reaction-clear {
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
   color: #a08f87;
@@ -605,7 +631,7 @@
 #planner-root .cal-event-form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 #planner-root .cal-event-input,
@@ -617,7 +643,7 @@
   border-radius: 10px;
   background: #fff;
   color: var(--text-chocolate);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 11px;
   outline: none;
 }
@@ -635,7 +661,7 @@
 }
 
 #planner-root .cal-event-label {
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 700;
   color: #a08f87;
@@ -677,7 +703,7 @@
   border-radius: 999px;
   background: #fff;
   color: var(--accent-taupe-deep);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 800;
   line-height: 1.2;
@@ -718,7 +744,7 @@
   display: block;
   overflow: hidden;
   color: #75666e;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10.5px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -728,7 +754,7 @@
 #planner-root .cal-event-item small {
   display: block;
   color: #b09ca6;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8.5px;
 }
 
@@ -745,7 +771,7 @@
 #planner-root .cal-st-empty {
   padding: 8px;
   color: #b6a9a1;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   text-align: center;
 }
@@ -753,13 +779,13 @@
 #planner-root .cal-photo-box {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 #planner-root .cal-photo-preview {
   display: grid;
   width: 100%;
-  height: 92px;
+  height: 72px;
   place-items: center;
   overflow: hidden;
   border: 1.5px dashed var(--accent-taupe-soft);
@@ -775,7 +801,7 @@
 
 #planner-root .cal-photo-empty {
   color: #b6a9a1;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
 }
 
@@ -790,7 +816,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   font-weight: 800;
   color: var(--text-chocolate-muted);
@@ -831,16 +857,15 @@
 }
 
 #planner-root .cal-day-actions {
-  position: sticky;
-  bottom: -14px;
+  position: static;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 11px -16px 0;
-  padding: 9px 16px 14px;
-  background: #fffdfa;
-  box-shadow: 0 -9px 12px rgba(255, 253, 250, 0.92);
+  margin: 8px 0 0;
+  padding: 8px 0 2px;
+  background: transparent;
+  box-shadow: none;
 }
 
 #planner-root .cal-btn {
@@ -853,7 +878,7 @@
   border-radius: 999px;
   background: #fff;
   color: var(--text-chocolate-muted);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
@@ -875,9 +900,12 @@
 
 /* tema */
 #planner-root .cal-theme-card {
+  width: 100%;
+  max-width: 440px;
   width: min(100%, 440px);
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -894,7 +922,7 @@
 #planner-root .cal-kicker {
   display: block;
   margin-bottom: 3px;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -905,9 +933,9 @@
 #planner-root .cal-theme-head h2,
 #planner-root .cal-sticker-head h2 {
   margin: 0;
-  font-family: 'Patrick Hand', var(--cal-fonte), var(--fonte-emoji), cursive;
+  font-family: var(--cal-fonte), var(--fonte-emoji);
   font-size: 21px;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text-chocolate);
 }
 
@@ -918,15 +946,19 @@
 
 #planner-root .cal-theme-body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
   padding: 10px 13px 12px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 #planner-root .cal-theme-label {
   margin: 2px 0 0;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -945,7 +977,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
   color: #a08f87;
@@ -954,6 +986,15 @@
 #planner-root .cal-theme-field.wide {
   flex: 1 1 170px;
   justify-content: space-between;
+}
+
+#planner-root .cal-font-upload {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+#planner-root .cal-font-upload:active {
+  transform: scale(0.97);
 }
 
 #planner-root .cal-theme-field input[type="color"] {
@@ -975,7 +1016,7 @@
   border-radius: 8px;
   background: #fff;
   color: var(--text-chocolate-muted);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
 }
 
@@ -987,6 +1028,7 @@
 
 #planner-root .cal-fundo-option {
   position: relative;
+  min-height: 52px;
   aspect-ratio: 1;
   padding: 0;
   overflow: hidden;
@@ -1010,7 +1052,7 @@
   padding: 1px 0;
   background: rgba(255, 253, 250, 0.84);
   color: #8b6b57;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 6.5px;
   font-weight: 800;
   text-align: center;
@@ -1032,7 +1074,7 @@
   border-radius: 10px;
   background: #fffdfc;
   color: var(--text-chocolate-muted);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 800;
   cursor: pointer;
@@ -1073,6 +1115,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 9px 13px 9px;
   padding: 9px 13px calc(9px + env(safe-area-inset-bottom, 0px));
   border-top: 1.5px dashed var(--accent-taupe-soft);
   background: #fffdfc;
@@ -1082,6 +1125,10 @@
 
 #planner-root .stickers-overlay {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 12;
   overflow: visible;
@@ -1171,7 +1218,7 @@
   border-radius: 50%;
   background: #ff5479;
   color: #fff;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
@@ -1190,9 +1237,14 @@
   z-index: 1100;
   display: none;
   flex-direction: column;
+  width: 96vw;
+  max-width: 720px;
   width: min(96vw, 720px);
+  height: 58vh;
   height: min(58vh, 560px);
+  max-height: 58vh;
   max-height: min(58vh, 560px);
+  min-height: 0;
   transform: translateX(-50%);
   border: 2px solid var(--accent-taupe-soft);
   border-radius: 22px;
@@ -1243,7 +1295,7 @@
   border-radius: 999px;
   background: #fff;
   color: #a08f87;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
   cursor: pointer;
@@ -1265,7 +1317,7 @@
   border-radius: 999px;
   background: #fff;
   color: var(--text-chocolate);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 11px;
   outline: none;
 }
@@ -1311,7 +1363,7 @@
   border-radius: 10px;
   background: #fff;
   color: var(--accent-taupe-deep);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   font-weight: 800;
   cursor: pointer;
@@ -1320,10 +1372,11 @@
 #planner-root .cal-sticker-hint {
   flex: 0 0 auto;
   margin: 0;
+  padding: 7px 13px 9px;
   padding: 7px 13px calc(9px + env(safe-area-inset-bottom, 0px));
   border-top: 1.5px dashed var(--accent-taupe-soft);
   color: #b1a29a;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   text-align: center;
 }
@@ -1376,12 +1429,15 @@
   }
 
   #planner-root .cal-modal {
-    padding: 8px;
+    padding: 6px;
   }
 
   #planner-root .cal-modal-card {
+    width: 100%;
+    max-width: 400px;
     width: min(100%, 400px);
-    max-height: 94dvh;
+    max-height: 96vh;
+    max-height: 96dvh;
   }
 
   #planner-root .cal-sticker-drawer {
@@ -1410,6 +1466,7 @@ body {
 }
 
 body {
+  min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
@@ -1418,8 +1475,11 @@ body {
 }
 
 #planner-root {
+  padding: 10px 12px 24px;
   padding: 10px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: 12px;
   padding-left: calc(12px + env(safe-area-inset-left, 0px));
+  padding-right: 12px;
   padding-right: calc(12px + env(safe-area-inset-right, 0px));
 }
 
@@ -1430,20 +1490,38 @@ body {
 
 #lp-boot-error {
   margin: 14vh auto 0;
+  width: 88vw;
+  max-width: 340px;
   width: min(88vw, 340px);
   padding: 16px 18px;
   border: 1px solid #f0d9e2;
   border-radius: 16px;
   background: #fff7fa;
   color: #8b5e6d;
-  font: 12px/1.6 'Nunito', sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
+  font-size: 12px;
+  line-height: 1.6;
   text-align: center;
+}
+
+#lp-boot-error button {
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border: 1.5px solid #e6b7c6;
+  border-radius: 999px;
+  background: #fff;
+  color: #8b4a5f;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 #lp-boot-error strong {
   display: block;
   margin-bottom: 4px;
-  font-family: 'Gowun Batang', Georgia, var(--fonte-emoji), serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 16px;
 }
 
@@ -1454,6 +1532,7 @@ body {
 .lp-toast {
   position: fixed;
   left: 50%;
+  bottom: 20px;
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   z-index: 9999;
   max-width: 82vw;
@@ -1463,7 +1542,9 @@ body {
   background: #fff7fa;
   color: #8b5e6d;
   box-shadow: 0 6px 20px rgba(139, 94, 109, 0.14);
-  font: 12px/1.4 'Nunito', sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
+  font-size: 12px;
+  line-height: 1.4;
   text-align: center;
   opacity: 0;
   pointer-events: none;
@@ -1505,7 +1586,9 @@ body {
   margin: 14px auto 0;
   max-width: 76%;
   color: #a08c84;
-  font: 11px/1.6 'Nunito', sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
+  font-size: 11px;
+  line-height: 1.6;
   text-align: center;
 }
 

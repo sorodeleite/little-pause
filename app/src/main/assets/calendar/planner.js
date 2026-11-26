@@ -12,6 +12,8 @@
   const ZOOM_KEY = 'lp_cal_zoom';
   const HOLIDAY_KEY = 'lp_cal_holidays';
   const EMOJI_KEY = 'lp_cal_emoji';
+  const CUSTOM_FONT_KEY = 'lp_cal_custom_font';
+  const CUSTOM_FONT_FAMILY = 'LP Cal Font';
   const TASKS_MIGRATED_KEY = 'lp_cal_tasks_migrated';
   const HOUR = 46;
   const MAX_LINES = 3;
@@ -34,9 +36,9 @@
   };
   const QUADRO_NOMES = { grade: 'grade', cartoes: 'cartões', redondos: 'redondos', limpos: 'limpos' };
   const FONTE_NOMES = {
-    batang: 'Gowun Batang (romance)', nunito: 'Nunito (limpa)', patrick: 'Patrick Hand (gostosa)',
-    caveat: 'Caveat (caligrafia)', gloria: 'Gloria (giz de cera)', indie: 'Indie Flower (despojada)',
-    vt323: 'VT323 (retrô)'
+    jorte: 'Jorte (limpa e apertadinha)', batang: 'Gowun Batang (romance)', nunito: 'Nunito (limpa)',
+    patrick: 'Patrick Hand (gostosa)', caveat: 'Caveat (caligrafia)', gloria: 'Gloria (giz de cera)',
+    indie: 'Indie Flower (despojada)', vt323: 'VT323 (retrô)', custom: 'minha fonte ♡'
   };
   const MINI_NOMES = {
     nada: 'sem numerinho', dia: 'dia do ano (1…366)', semana: 'semana do ano (1…53)',
@@ -66,6 +68,8 @@
     holidays: readHolidays(),
     emoji: readEmojiMode(),
     style: Style ? Style.ler(localStorage) : null,
+    customFont: null,
+    customFace: null,
     eventColor: (Events && Events.CORES[0]) || '#f9c8d7',
     draft: null,
     drag: null,
@@ -390,6 +394,8 @@
       + '        <label class="cal-theme-field wide" for="cal-fonte-select">letra'
       + '          <select id="cal-fonte-select">' + Object.keys(FONTE_NOMES).map(function (key) { return '<option value="' + key + '">' + FONTE_NOMES[key] + '</option>'; }).join('') + '</select>'
       + '        </label>'
+      + '        <label class="cal-mini-btn cal-font-upload" for="cal-font-file" title="escolher uma fonte do celular">🔤 minha fonte</label>'
+      + '        <input type="file" id="cal-font-file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" hidden>'
       + '      </div>'
       + '      <div class="cal-theme-row">'
       + '        <label class="cal-theme-field wide" for="cal-mini-select">numerinho do lado'
@@ -449,6 +455,7 @@
     bind();
     render();
     restoreStickers();
+    restoreCustomFont();
     root.dataset.ready = '1';
     try {
       if (typeof window.__littlePauseCalendarReady === 'function') {
@@ -694,6 +701,7 @@
     const target = event.target;
     if (target.id === 'cal-photo-file') return useDayPhoto(target);
     if (target.id === 'cal-bg-file') return useThemePhoto(target);
+    if (target.id === 'cal-font-file') return useCustomFont(target);
     if (target.id === 'cal-photo-front') {
       if (state.draft && state.draft.photo) state.draft.photo.frente = target.checked;
       return;
@@ -1486,7 +1494,19 @@
     root.querySelector('#cal-celula-cor').value = style.celulaCor;
     root.querySelector('#cal-linha-cor').value = style.linhaCor;
     root.querySelector('#cal-texto-cor').value = style.textoCor;
-    root.querySelector('#cal-fonte-select').value = style.fonte;
+    const fonteSelect = root.querySelector('#cal-fonte-select');
+    if (fonteSelect) {
+      const fontes = Object.keys(FONTE_NOMES).filter(function (key) {
+        return key !== 'custom' || state.customFont;
+      });
+      fonteSelect.innerHTML = fontes.map(function (key) {
+        const label = key === 'custom' && state.customFont
+          ? '★ ' + state.customFont.name
+          : FONTE_NOMES[key];
+        return '<option value="' + key + '">' + escape(label) + '</option>';
+      }).join('');
+      fonteSelect.value = fontes.indexOf(style.fonte) !== -1 ? style.fonte : 'jorte';
+    }
     root.querySelector('#cal-mini-select').value = style.mini;
     root.querySelector('#cal-paleta-select').value = style.paleta;
     root.querySelector('#cal-domingo-vermelho').checked = style.domingoVermelho;
@@ -1528,6 +1548,91 @@
   function clearThemePhoto() {
     changeTheme({ foto: '', fundo: state.style.fundo === 'foto' ? 'nuvens' : state.style.fundo });
     renderTheme();
+  }
+
+  function readFontData(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '')); };
+      reader.onerror = function () { reject(reader.error || new Error('fonte inválida')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function registrarFonteCustom(data, name) {
+    if (!data || typeof FontFace !== 'function' || !document.fonts) return false;
+    try {
+      const face = new FontFace(CUSTOM_FONT_FAMILY, 'url(' + data + ')');
+      await face.load();
+      if (state.customFace) {
+        try { document.fonts.delete(state.customFace); } catch (error) { }
+      }
+      document.fonts.add(face);
+      state.customFace = face;
+      state.customFont = { name: name || 'minha fonte', data: data };
+      Style.FAMILIAS.custom = "'" + CUSTOM_FONT_FAMILY + "', 'Nunito', sans-serif";
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function useCustomFont(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > 2.5 * 1024 * 1024) {
+      toast('essa fonte é grande demais (até 2,5 MB) 🌧️', 'error');
+      return;
+    }
+    let data = '';
+    try {
+      data = await readFontData(file);
+    } catch (error) {
+      toast('não consegui ler essa fonte 🌧️', 'error');
+      return;
+    }
+    const name = String(file.name || '').replace(/\.[^.]+$/, '') || 'minha fonte';
+    if (!(await registrarFonteCustom(data, name))) {
+      toast('não consegui carregar essa fonte 🌧️ tenta outra?', 'error');
+      return;
+    }
+    let saved = true;
+    try {
+      localStorage.setItem(CUSTOM_FONT_KEY, JSON.stringify({ name: name, data: data }));
+    } catch (error) {
+      saved = false;
+    }
+    changeTheme({ fonte: 'custom' }, false);
+    render();
+    renderTheme();
+    toast(saved ? 'fonte "' + name + '" carregada ♡' : 'a fonte vale só até fechar o app (grande demais pra guardar)', saved ? undefined : 'error');
+  }
+
+  async function restoreCustomFont() {
+    if (!Style) return;
+    let raw = null;
+    try { raw = JSON.parse(localStorage.getItem(CUSTOM_FONT_KEY) || 'null'); } catch (error) { }
+    if (!raw || !raw.data) {
+      if (state.style && state.style.fonte === 'custom') {
+        state.style = Style.normalizar(Object.assign({}, state.style, { fonte: 'jorte' }));
+        Style.guardar(localStorage, state.style);
+        applyStyle();
+      }
+      return;
+    }
+    if (await registrarFonteCustom(raw.data, raw.name)) {
+      if (state.style && state.style.fonte === 'custom') {
+        applyStyle();
+        render();
+      }
+      renderTheme();
+    } else if (state.style && state.style.fonte === 'custom') {
+      state.style = Style.normalizar(Object.assign({}, state.style, { fonte: 'jorte' }));
+      Style.guardar(localStorage, state.style);
+      applyStyle();
+      render();
+    }
   }
 
   function resetTheme() {

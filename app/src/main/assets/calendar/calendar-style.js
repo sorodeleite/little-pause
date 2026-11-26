@@ -6,15 +6,17 @@
   'use strict';
 
   const CHAVE = 'pooftie_calendar_style';
-  const VERSAO = 2;
+  const VERSAO = 3;
 
   const FUNDOS = ['nenhum', 'bolinhas', 'nuvens', 'coracoes', 'xadrez', 'listras', 'estrelinhas', 'papel', 'foto'];
   const QUADROS = ['grade', 'cartoes', 'redondos', 'limpos'];
-  const FONTES = ['batang', 'nunito', 'patrick', 'caveat', 'gloria', 'indie', 'vt323'];
+  const FONTES = ['jorte', 'custom', 'batang', 'nunito', 'patrick', 'caveat', 'gloria', 'indie', 'vt323'];
   const MINIS = ['nada', 'dia', 'semana', 'mesdia'];
   const PALETAS = ['romantica', 'terrosa', 'pastel', 'neutra'];
 
   const FAMILIAS = {
+    jorte: "'Roboto Condensed', 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif",
+    custom: "'LP Cal Font', 'Nunito', sans-serif",
     batang: "'Gowun Batang', Georgia, 'Times New Roman', serif",
     nunito: "'Nunito', sans-serif",
     patrick: "'Patrick Hand', cursive",
@@ -59,6 +61,23 @@
     return `${normalizarCor(cor, '#ffffff')}${byte}`;
   }
 
+  function luminancia(cor) {
+    const tratada = normalizarCor(cor, '#ffffff');
+    const r = parseInt(tratada.slice(1, 3), 16);
+    const g = parseInt(tratada.slice(3, 5), 16);
+    const b = parseInt(tratada.slice(5, 7), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+
+  /* se a letra sumir no fundo (branco no branco, por exemplo), escolhe uma
+     cor que dá pra ler. assim o calendário nunca fica "vazio" de novo. */
+  function corVisivel(cor, fundo, padrao, minimo) {
+    const escolhida = normalizarCor(cor, padrao);
+    const distancia = Math.abs(luminancia(escolhida) - luminancia(fundo));
+    if (distancia >= (minimo == null ? 0.22 : minimo)) return escolhida;
+    return luminancia(fundo) > 0.5 ? '#2f2a2c' : '#ffffff';
+  }
+
   const escolha = (lista, valor, padrao) => (lista.includes(valor) ? valor : padrao);
 
   function ehFalso(valor) {
@@ -88,7 +107,7 @@
       textoCor: CORES_PADRAO.textoCor,
       domingoCor: CORES_PADRAO.domingoCor,
       domingoVermelho: true,
-      fonte: 'batang',
+      fonte: 'jorte',
       mini: 'mesdia',
       paleta: 'romantica',
       foto: ''
@@ -107,14 +126,27 @@
     mini: ['nada', 'mesdia']
   };
 
+  const TROCAS_DA_V2 = {
+    fonte: ['batang', 'jorte']
+  };
+
   function migrar(entrada) {
     if (!entrada || typeof entrada !== 'object') return entrada;
-    if (Number(entrada.version) >= VERSAO) return entrada;
+    const versao = Number(entrada.version) || 0;
+    if (versao >= VERSAO) return entrada;
     const novo = { ...entrada };
-    Object.keys(TROCAS_DA_V1).forEach((chave) => {
-      const [de, para] = TROCAS_DA_V1[chave];
-      if (novo[chave] === de) novo[chave] = para;
-    });
+    if (versao < 2) {
+      Object.keys(TROCAS_DA_V1).forEach((chave) => {
+        const [de, para] = TROCAS_DA_V1[chave];
+        if (novo[chave] === de) novo[chave] = para;
+      });
+    }
+    if (versao < 3) {
+      Object.keys(TROCAS_DA_V2).forEach((chave) => {
+        const [de, para] = TROCAS_DA_V2[chave];
+        if (novo[chave] === de) novo[chave] = para;
+      });
+    }
     return novo;
   }
 
@@ -249,12 +281,12 @@
     elemento.style.setProperty('--cal-fundo', fundoCss(s));
     elemento.style.setProperty('--cal-celula', comAlfa(s.celulaCor, 0.86));
     elemento.style.setProperty('--cal-celula-cheia', s.celulaCor);
-    elemento.style.setProperty('--cal-linha', s.linhaCor);
-    elemento.style.setProperty('--cal-texto', s.textoCor);
+    elemento.style.setProperty('--cal-linha', corVisivel(s.linhaCor, s.fundoCor, '#eee1e7', 0.06));
+    elemento.style.setProperty('--cal-texto', corVisivel(s.textoCor, s.celulaCor, '#2f2a2c'));
     elemento.style.setProperty('--cal-domingo-cor', s.domingoCor);
     elemento.style.setProperty('--cal-cabecalho', comAlfa(s.domingoCor, 0.075));
     elemento.style.setProperty('--cal-hoje', comAlfa(s.domingoCor, 0.1));
-    elemento.style.setProperty('--cal-fonte', FAMILIAS[s.fonte] || FAMILIAS.batang);
+    elemento.style.setProperty('--cal-fonte', FAMILIAS[s.fonte] || FAMILIAS.jorte);
     return s;
   }
 

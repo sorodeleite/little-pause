@@ -44,7 +44,7 @@ fun CalendarView(
     val latestDate = rememberUpdatedState(onDateSelected)
     val latestReady = rememberUpdatedState(onReady)
     val pendingFile = remember { arrayOfNulls<ValueCallback<Array<Uri>>>(1) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         pendingFile[0]?.onReceiveValue(uri?.let { arrayOf(it) } ?: emptyArray())
         pendingFile[0] = null
     }
@@ -105,7 +105,17 @@ fun CalendarView(
                     ): Boolean {
                         pendingFile[0]?.onReceiveValue(null)
                         pendingFile[0] = filePathCallback
-                        imagePicker.launch("image/*")
+                        // o mesmo seletor serve para fotos e para a fonte da pessoa
+                        val accept = fileChooserParams?.acceptTypes?.joinToString("|")?.lowercase().orEmpty()
+                        val mime = when {
+                            accept.contains("font") ||
+                                accept.contains(".ttf") ||
+                                accept.contains(".otf") ||
+                                accept.contains(".woff") -> "*/*"
+                            accept.contains("image") || accept.isBlank() -> "image/*"
+                            else -> "*/*"
+                        }
+                        filePicker.launch(mime)
                         return true
                     }
                 }

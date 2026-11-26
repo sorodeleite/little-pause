@@ -5,6 +5,21 @@
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
 
+## 0.7.2 — 2026-11-26 · a letra do jorte e os cartões arrumadinhos
+
+- **a letra do jorte** — o calendário inteiro agora usa a mesma letra do Jorte Calendar
+  (Roboto Condensed, guardada dentro do app). a letra antiga vira a nova sem perder nada, e quem
+  já tinha escolhido outra letra no 🎨 (nunito, caveat, patrick…) continua com ela
+- **a sua letra** — no 🎨 tem o botão **🔤 minha fonte**: escolha um arquivo .ttf, .otf, .woff ou
+  .woff2 do celular e ele fica guardado dentro do app, voltando sozinho depois de fechar
+- **cartões sem texto cortado** — o cartão de editar o dia e a caixinha de adesivos agora cabem na
+  tela e rolam direitinho; os botões de guardar ficam no fim, sem ficar por cima do conteúdo
+- **tela branca consertada** — o calendário se protege contra erro na inicialização, ganhou
+  compatibilidade com WebView mais antigo e, se algo falhar, mostra um recado com o botão
+  “abrir de novo ♡” em vez de ficar branco
+- **cores que não somem** — se a cor da letra ficar igual à do quadradinho (branco no branco),
+  o app troca por uma cor que dá pra ler
+
 ## 0.7.1 — 2026-11-25 · correções do calendário
 
 - correção do tamanho dos cartões de edição e da caixinha de adesivos em telas pequenas

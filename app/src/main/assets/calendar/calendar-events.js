@@ -97,17 +97,17 @@
   function normalizarEvento(entrada) {
     const cru = objeto(entrada);
     if (!cru) return null;
-    const titulo = String(cru.titulo ?? cru.title ?? cru.texto ?? '')
+    const titulo = String(cru.titulo || cru.title || cru.texto || '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, LIMITE_DO_TITULO);
     if (!titulo) return null;
-    const inicio = normalizarData(cru.inicio ?? cru.start ?? cru.data);
+    const inicio = normalizarData(cru.inicio || cru.start || cru.data);
     if (!inicio) return null;
-    let fim = normalizarData(cru.fim ?? cru.end) || inicio;
+    let fim = normalizarData(cru.fim || cru.end) || inicio;
     if (fim < inicio) fim = inicio;
-    const hora = normalizarHora(cru.hora ?? cru.horaInicio ?? cru.startTime);
-    let fimHora = normalizarHora(cru.fimHora ?? cru.horaFim ?? cru.endTime) || hora;
+    const hora = normalizarHora(cru.hora || cru.horaInicio || cru.startTime);
+    let fimHora = normalizarHora(cru.fimHora || cru.horaFim || cru.endTime) || hora;
     if (hora && fim === inicio && fimHora < hora) fimHora = hora;
     return {
       id: String(cru.id || '').trim().slice(0, 40) || idNovo(),
@@ -116,7 +116,7 @@
       fim,
       hora,
       fimHora,
-      cor: normalizarCor(cru.cor ?? cru.color),
+      cor: normalizarCor(cru.cor || cru.color),
       criado: Number(cru.criado) || Date.now()
     };
   }

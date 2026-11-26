@@ -1,5 +1,7 @@
 :root {
   --fonte-emoji: 'Pooftie Apple Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  /* a letra do Jorte: condensada, limpa e sem enfeite */
+  --fonte-jorte: 'Roboto Condensed', 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
 #planner-root {
@@ -16,7 +18,7 @@
   overflow: hidden;
   background: #fffdfc;
   color: var(--cal-texto);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
 }
 
 #planner-root *,
@@ -45,6 +47,8 @@ body {
   left: 50%;
   top: 16vh;
   z-index: 9999;
+  width: 88vw;
+  max-width: 340px;
   width: min(88vw, 340px);
   margin: 0;
   transform: translateX(-50%);
@@ -68,7 +72,7 @@ body {
   border-radius: 8px;
   background: transparent;
   color: #857a76;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
@@ -109,7 +113,7 @@ body {
   border-radius: 999px;
   background: #ffffff;
   color: #7d6a62;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 800;
   cursor: pointer;
@@ -157,7 +161,7 @@ body {
   border: 0;
   background: transparent;
   color: #9a8d87;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -199,7 +203,7 @@ body {
   border-radius: 50%;
   background: #fff;
   color: #8b756c;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -214,6 +218,10 @@ body {
 
 .cal-view {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   display: none;
   flex-direction: column;
@@ -249,7 +257,7 @@ body {
   padding: 5px 0 4px;
   overflow: hidden;
   color: #948a86;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -344,6 +352,10 @@ body {
 
 .cal-bars-layer {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 2;
   pointer-events: none;
@@ -359,7 +371,7 @@ body {
   border-radius: 2px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 700;
   line-height: 1;
@@ -391,6 +403,10 @@ body {
 
 .cal-cell-photo {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -520,7 +536,7 @@ body {
   align-items: center;
   gap: 3px;
   min-width: 0;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: calc(9px * var(--cal-zoom));
   font-weight: 600;
   line-height: 1.4;
@@ -599,7 +615,7 @@ body {
 
 .cal-week-day small {
   color: #9a8d87;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -614,7 +630,7 @@ body {
   padding: 0 2px;
   border-radius: 999px;
   color: #4a3f3b;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 12.5px;
   font-weight: 800;
 }
@@ -659,7 +675,7 @@ body {
   padding: 2px 3px;
   overflow: hidden;
   color: #a2948e;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 6px;
   font-weight: 800;
   line-height: 1;
@@ -685,7 +701,7 @@ body {
   border-radius: 3px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 700;
   line-height: 15px;
@@ -709,7 +725,7 @@ body {
   border-radius: 9px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8.5px;
   font-weight: 700;
   cursor: pointer;
@@ -718,7 +734,7 @@ body {
 .cal-day-empty {
   padding: 2px 0;
   color: #b3a59f;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8.5px;
 }
 
@@ -739,14 +755,14 @@ body {
 
 .cal-day-date b {
   color: #4a3f3b;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 14px;
   font-weight: 800;
 }
 
 .cal-day-date span {
   color: #8b7f7a;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10.5px;
   font-weight: 600;
 }
@@ -754,7 +770,7 @@ body {
 .cal-day-feriado {
   margin: 2px 0 0;
   color: #d94a63;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9px;
   font-weight: 800;
 }
@@ -783,7 +799,7 @@ body {
   position: absolute;
   right: 4px;
   color: #a89b95;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 8px;
   font-weight: 700;
   line-height: 1;
@@ -837,7 +853,7 @@ body {
   border-radius: 3px;
   background: var(--c, #f9c8d7);
   color: var(--t, #4a3a34);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 7.5px;
   font-weight: 700;
   line-height: 1.25;
@@ -882,6 +898,8 @@ body {
 
 .cal-fab {
   position: fixed;
+  right: 14px;
+  bottom: 14px;
   right: calc(14px + env(safe-area-inset-right, 0px));
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   z-index: 900;
@@ -893,7 +911,7 @@ body {
   border-radius: 50%;
   background: var(--cal-domingo-cor);
   color: #ffffff;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 25px;
   font-weight: 700;
   line-height: 1;
@@ -908,7 +926,7 @@ body {
 .cal-day-holiday {
   margin: -3px 0 7px;
   color: #d94a63;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   font-weight: 800;
   text-align: center;
@@ -927,7 +945,7 @@ body {
   border-radius: 999px;
   background: #fff;
   color: #a08f87;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   font-weight: 800;
   cursor: pointer;
@@ -944,7 +962,7 @@ body {
   align-items: center;
   gap: 4px;
   color: #a08f87;
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 9.5px;
   font-weight: 800;
 }
@@ -956,7 +974,7 @@ body {
   border-radius: 9px;
   background: #fff;
   color: var(--text-chocolate);
-  font-family: 'Nunito', var(--fonte-emoji), sans-serif;
+  font-family: var(--fonte-jorte), var(--fonte-emoji);
   font-size: 10.5px;
   font-weight: 700;
 }
@@ -967,6 +985,10 @@ body {
 
 .cal-stickers {
   position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 12;
   overflow: visible;
@@ -1018,9 +1040,13 @@ body {
 }
 
 #planner-root .cal-sticker-drawer {
+  bottom: 8px;
   bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  height: 58vh;
   height: min(58vh, 470px);
+  max-height: 58vh;
   max-height: min(58vh, 470px);
+  min-height: 0;
 }
 
 #planner-root .cal-sticker-drawer.is-open {
@@ -1094,9 +1120,12 @@ body {
 
 @media (max-width: 760px) {
   #planner-root .cal-sticker-drawer {
+    bottom: 8px;
     bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     width: calc(100vw - 12px);
+    height: 56vh;
     height: min(56vh, 430px);
+    max-height: 56vh;
     max-height: min(56vh, 430px);
   }
 

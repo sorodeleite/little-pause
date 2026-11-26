@@ -72,9 +72,12 @@ calendário que eu mais gosto: os quadradinhos, as linhas dos eventos, a régua 
 - **carinhas do dia** — um emoji para marcar o clima daquele dia, no desenho do iPhone (ou do aparelho,
   se você escolher no 🎨).
 - **foto do dia** — uma fotinha preenche o quadradinho do dia.
+- **a letra do Jorte** — o calendário usa a mesma letra do Jorte Calendar (Roboto Condensed,
+  guardada dentro do app); no 🎨 você pode trocar por outra ou carregar a **sua própria fonte**
+  (.ttf, .otf, .woff ou .woff2), que fica guardada e volta depois de fechar o app.
 - **meu calendário 🎨** — fundo (bolinhas, nuvens, xadrez, papel, a sua própria foto), estilo dos
-  quadradinhos, cor de cada detalhe, sete letras diferentes, o numerinho do lado (dia do ano, semana,
-  data curtinha), os feriados e as carinhas.
+  quadradinhos, cor de cada detalhe, a letra do Jorte, a sua e mais sete, o numerinho do lado
+  (dia do ano, semana, data curtinha), os feriados e as carinhas.
 - **caixinha de adesivos 🎀** — 899 adesivos guardados no próprio APK, em categorias
   (lacinhos, natureza, pelúcias, comidinhas, rendinhas…). Toca para colar, arrasta para o cantinho,
   gira e aumenta nas bolinhas. Ele também aceita uma imagem da galeria.

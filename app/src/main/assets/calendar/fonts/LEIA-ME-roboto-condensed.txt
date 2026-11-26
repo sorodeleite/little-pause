@@ -1,0 +1,8 @@
+Roboto Condensed
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licenciada sob a Apache License, Version 2.0.
+https://www.apache.org/licenses/LICENSE-2.0
+
+Arquivo: roboto-condensed-latin.woff2 (subset latin, pesos 400 e 700).
+Baixada do Google Fonts para ficar guardada dentro do app, sem internet.

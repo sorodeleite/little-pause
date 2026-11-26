@@ -1,4 +1,7 @@
 /* fontes do calendario, guardadas dentro do app (sem internet) */
+/* a letra do Jorte (Roboto Condensed), a mesma do calendário de verdade */
+@font-face{font-family:'Roboto Condensed';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/roboto-condensed-latin.woff2') format('woff2')}
+@font-face{font-family:'Roboto Condensed';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/roboto-condensed-latin.woff2') format('woff2')}
 @font-face{font-family:'Caveat';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/caveat-400-normal.woff2') format('woff2')}
 @font-face{font-family:'Caveat';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/caveat-600-normal.woff2') format('woff2')}
 @font-face{font-family:'Caveat';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/caveat-700-normal.woff2') format('woff2')}
