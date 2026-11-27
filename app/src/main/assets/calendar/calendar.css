@@ -464,7 +464,7 @@
   width: 100%;
   max-width: 380px;
   width: min(100%, 380px);
-  max-height: 92vh;
+  max-height: 92%;
   max-height: min(92dvh, 780px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1436,7 +1436,7 @@
     width: 100%;
     max-width: 400px;
     width: min(100%, 400px);
-    max-height: 96vh;
+    max-height: 96%;
     max-height: 96dvh;
   }
 

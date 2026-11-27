@@ -3,6 +3,7 @@ package com.littlepause
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -54,6 +55,12 @@ fun CalendarView(
         factory = { viewContext ->
             val legacyTasks = legacyTasksJson(viewContext)
             WebView(viewContext).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                isFocusable = true
+                isFocusableInTouchMode = true
                 setBackgroundColor(Color.rgb(255, 253, 252))
                 settings.apply {
                     javaScriptEnabled = true
