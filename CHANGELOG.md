@@ -5,6 +5,13 @@
 as notas de cada versão. o app mostra este texto em **atualizações ♡**, e o workflow usa a seção da
 versão nova como descrição do release no github.
 
+## 0.7.4 — 2026-11-27 · calendário e adesivos no tamanho certo
+
+- **calendário sem tela branca** — ajustado o tamanho do WebView e o fluxo do layout do calendário
+  para a grade dos dias não colapsar nem sumir atrás de uma tela branca
+- **janela de adesivos e cartões no tamanho certo** — a gavetinha de adesivos e os cartões de
+  edição agora têm altura mínima garantida e não encolhem para uma única linha
+
 ## 0.7.3 — 2026-11-26 · a fonte escolhida abre direitinho
 
 - o botão **🔤 minha fonte** agora abre o seletor de arquivos do Android, e não só a galeria de
